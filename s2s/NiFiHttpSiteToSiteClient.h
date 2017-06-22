@@ -20,8 +20,23 @@
 
 #import <Foundation/Foundation.h>
 #import "NiFiSiteToSiteClientPrivate.h"
+#import "NiFiHttpRestApiClient.h"
 
 @interface NiFiHttpSiteToSiteClient : NiFiSiteToSiteClient
+@end
+
+// This class is only to be used internally and in test cases.
+// Real use should create transactions using a NiFiSiteToSiteClient's createTransaction method.
+@interface NiFiHttpTransaction : NSObject <NiFiTransaction>
+- (nonnull instancetype) initWithPortId:(nonnull NSString *)portId
+                      httpRestApiClient:(nonnull NiFiHttpRestApiClient *)restApiClient;
+@property (nonatomic, retain, readwrite, nonnull) NSDate *startTime;
+@property (nonatomic, readwrite) NiFiTransactionState transactionState;
+@property (atomic, readwrite) bool shouldKeepAlive;
+@property (nonatomic, retain, readwrite, nonnull) NiFiHttpRestApiClient *restApiClient;
+@property (nonatomic, readwrite, nonnull) NiFiTransactionResource *transactionResource;
+@property (nonatomic, readwrite, nonnull) NSOutputStream *dataPacketWriterOutputStream;
+@property (nonatomic, readwrite, nonnull) NiFiDataPacketEncoder *dataPacketEncoder;
 @end
 
 #endif /* HttpSiteToSiteClient_h */

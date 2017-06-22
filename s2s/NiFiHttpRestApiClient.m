@@ -41,12 +41,6 @@ static const int SECONDS_TO_NANOS = 1000000000;
 /********** TransactionResource **********/
 
 @interface NiFiTransactionResource()
-@property (nonatomic, assign, readwrite, nullable) NSString *transactionId;
-@property (nonatomic, assign, readwrite, nullable) NSString *transactionUrl;
-@property (nonatomic, readwrite) NSInteger serverSideTtl;
-@property (nonatomic, readwrite) NSUInteger flowFilesSent;
-@property (nonatomic, readwrite) NiFiTransactionResponseCode lastResponseCode;
-@property (nonatomic, assign, readwrite, nullable) NSString *lastResponseMessage;
 - (nullable NSMutableURLRequest *) flowFilesUrlRequest;
 @end
 

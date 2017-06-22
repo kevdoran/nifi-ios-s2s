@@ -17,28 +17,17 @@
 
 #import <Foundation/Foundation.h>
 #import "NiFiHttpSiteToSiteClient.h"
-#import "NiFiHttpRestApiClient.h"
 
 static const int SECONDS_TO_NANOS = 1000000000;
 NSString *const HTTP_SITE_TO_SITE_PROTOCOL_VERSION = @"5";
 
 typedef void(^TtlExtenderBlock)(NSString * transactionId);
 
-@interface NiFiHttpTransaction : NSObject <NiFiTransaction>
-@property (nonatomic, retain, readwrite, nonnull) NSDate *startTime;
-@property (nonatomic, readwrite) NiFiTransactionState transactionState;
-@property (atomic, readwrite) bool shouldKeepAlive;
-@property (nonatomic, retain, readwrite, nonnull) NiFiHttpRestApiClient *restApiClient;
-@property (nonatomic, readwrite, nonnull) NiFiTransactionResource *transactionResource;
-@property (nonatomic, readwrite, nonnull) NSOutputStream *dataPacketWriterOutputStream;
-@property (nonatomic, readwrite, nonnull) NiFiDataPacketEncoder *dataPacketEncoder;
-@end
 
 @implementation NiFiHttpTransaction
 
 - (nonnull instancetype) initWithPortId:(nonnull NSString *)portId
-                      httpRestApiClient:(NiFiHttpRestApiClient *)restApiClient;
-{
+                      httpRestApiClient:(NiFiHttpRestApiClient *)restApiClient {
     self = [super init];
     if(self != nil) {
         _restApiClient = restApiClient;

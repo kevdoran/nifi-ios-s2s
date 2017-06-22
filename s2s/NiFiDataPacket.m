@@ -27,18 +27,18 @@
 
 
 @interface NiFiStreamingDataPacket : NiFiDataPacket
-@property (nonatomic, retain, readwrite, nonnull) NSInputStream *dataStream;
+@property (nonatomic, retain, readwrite, nullable) NSInputStream *dataStream;
 @property (nonatomic, readwrite) NSUInteger dataLength;
 - (nonnull instancetype)initWithAttributes:(nonnull NSDictionary<NSString *,NSString *> *)attributes
-                                dataStream:(nonnull NSInputStream *)dataStream
+                                dataStream:(nullable NSInputStream *)dataStream
                                 dataLength:(NSUInteger)dataLength;
 @end
 
 
 @interface NiFiBytesDataPacket : NiFiDataPacket
-@property (nonatomic, retain, readwrite, nonnull) NSData *data;
+@property (nonatomic, retain, readwrite, nullable) NSData *data;
 - (nonnull instancetype)initWithAttributes:(nonnull NSDictionary<NSString *,NSString *> *)attributes
-                                      data:(nonnull NSData *)data;
+                                      data:(nullable NSData *)data;
 @end
 
 
@@ -46,12 +46,12 @@
 
 // factory methods are supposed to validate that the init will work, and if it won't, then return nil
 + (nonnull instancetype)dataPacketWithAttributes:(nonnull NSDictionary<NSString *,NSString *> *)attributes
-                                            data:(nonnull NSData *)data {
+                                            data:(nullable NSData *)data {
     return [[NiFiBytesDataPacket alloc] initWithAttributes:attributes data:data];
 }
 
 + (nonnull instancetype)dataPacketWithAttributes:(nonnull NSDictionary<NSString *,NSString *> *)attributes
-                                      dataStream:(nonnull NSInputStream *)dataStream
+                                      dataStream:(nullable NSInputStream *)dataStream
                                       dataLength:(NSUInteger)length {
     return [[NiFiStreamingDataPacket alloc] initWithAttributes:attributes
                                                     dataStream:dataStream
@@ -71,14 +71,14 @@
     return self;
 }
 
-- (nonnull NSData *)data {
+- (nullable NSData *)data {
     @throw [NSException
             exceptionWithName:NSInternalInconsistencyException
             reason:[NSString stringWithFormat:@"You must override %@ in a subclass", NSStringFromSelector(_cmd)]
             userInfo:nil];
 }
 
-- (nonnull NSInputStream *)dataStream {
+- (nullable NSInputStream *)dataStream {
     @throw [NSException
             exceptionWithName:NSInternalInconsistencyException
             reason:[NSString stringWithFormat:@"You must override %@ in a subclass", NSStringFromSelector(_cmd)]
@@ -98,7 +98,7 @@
 @implementation NiFiStreamingDataPacket
 
 - (nonnull instancetype)initWithAttributes:(nonnull NSDictionary<NSString *,NSString *> *)attributes
-                                dataStream:(nonnull NSInputStream *)dataStream
+                                dataStream:(nullable NSInputStream *)dataStream
                                 dataLength:(NSUInteger)dataLength {
     self = [super initWithAttributes:attributes];
     if(self != nil) {
@@ -108,7 +108,11 @@
     return self;
 }
 
-- (nonnull NSData *)data {
+- (nullable NSData *)data {
+    if (!_dataStream || _dataLength == 0) {
+        return nil;
+    }
+    
     size_t bufsize = MIN(1024U, _dataLength);
     uint8_t *buf = malloc(bufsize);
     if (buf == NULL) {
@@ -138,7 +142,7 @@
     return result;
 }
 
-- (nonnull NSInputStream *)dataStream {
+- (nullable NSInputStream *)dataStream {
     return _dataStream;
 }
 
@@ -152,7 +156,7 @@
 @implementation NiFiBytesDataPacket
 
 - (nonnull instancetype)initWithAttributes:(nonnull NSDictionary<NSString *,NSString *> *)attributes
-                                            data:(nonnull NSData *)data {
+                                            data:(nullable NSData *)data {
     self = [super initWithAttributes:attributes];
     if(self != nil) {
         _data = data;
@@ -160,15 +164,21 @@
     return self;
 }
 
-- (nonnull NSData *)data {
+- (nullable NSData *)data {
     return _data;
 }
 
-- (nonnull NSInputStream *)dataStream {
+- (nullable NSInputStream *)dataStream {
+    if (!_data) {
+        return nil;
+    }
     return [NSInputStream inputStreamWithData:_data];
 }
 
 - (NSUInteger)dataLength {
+    if (!_data) {
+        return 0;
+    }
     return _data.length;
 }
 

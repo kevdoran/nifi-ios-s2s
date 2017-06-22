@@ -44,16 +44,16 @@ typedef enum {
 @interface NiFiDataPacket : NSObject
 
 + (nonnull instancetype)dataPacketWithAttributes:(nonnull NSDictionary<NSString *, NSString *> *)attributes
-                                            data:(nonnull NSData *)data;
+                                            data:(nullable NSData *)data;
 + (nonnull instancetype)dataPacketWithAttributes:(nonnull NSDictionary<NSString *, NSString *> *)attributes
-                                      dataStream:(nonnull NSInputStream *)dataStream
+                                      dataStream:(nullable NSInputStream *)dataStream
                                       dataLength:(NSUInteger)length;
 + (nonnull instancetype)dataPacketWithString:(nonnull NSString *)string;
 //+ (nonnull instancetype)dataPacketWithFileAtPath:(nonnull NSString *)filePath;
 
 - (nonnull NSDictionary<NSString *, NSString *> *)attributes;
-- (nonnull NSData *)data;
-- (nonnull NSInputStream *)dataStream;
+- (nullable NSData *)data;
+- (nullable NSInputStream *)dataStream;
 - (NSUInteger)dataLength;
 
 @end

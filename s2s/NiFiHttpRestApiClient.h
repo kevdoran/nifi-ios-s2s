@@ -30,12 +30,12 @@
 
 
 @interface NiFiTransactionResource : NSObject
-@property (nonatomic, assign, readonly, nullable) NSString *transactionId;
-@property (nonatomic, assign, readonly, nullable) NSString *transactionUrl;
-@property (nonatomic, readonly) NSInteger serverSideTtl;
-@property (nonatomic, readonly) NSUInteger flowFilesSent;
-@property (nonatomic, readonly) NiFiTransactionResponseCode lastResponseCode;
-@property (nonatomic, assign, readonly, nullable) NSString *lastResponseMessage;
+@property (nonatomic, assign, readwrite, nullable) NSString *transactionId;
+@property (nonatomic, assign, readwrite, nullable) NSString *transactionUrl;
+@property (nonatomic, readwrite) NSInteger serverSideTtl;
+@property (nonatomic, readwrite) NSUInteger flowFilesSent;
+@property (nonatomic, readwrite) NiFiTransactionResponseCode lastResponseCode;
+@property (nonatomic, assign, readwrite, nullable) NSString *lastResponseMessage;
 @end
 
 

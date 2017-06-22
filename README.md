@@ -8,13 +8,13 @@ This is currently a work in progress.
 
 * s2s: iOS Framework
 * s2sTests: Tests for the s2s framework
-* Demo: The Demo app (currently just a placeholder single-screen app)
+* Demo: A Demo app showing basic usage of the s2s framework
 
 ## Development Environment Requirements
 
 * A Mac (tested on MacOS 10.12.5)
 * XCode (tested with XCode 8)
-* An iOS device or simulator (tested on iOS 10 on iPhone SE simulator)
+* An iOS device or simulator (tested on iOS 9 and later, running on iPhone SE simulator device)
 
 ## Building
 
@@ -47,11 +47,6 @@ NSData * data2 = [@"Data Packet 2" dataUsingEncoding:NSUTF8StringEncoding];
 id dataPacket2 = [NiFiDataPacket dataPacketWithAttributes:attributes2 data:data2];
 [transaction sendData:dataPacket2];
 
-NSDictionary * attributes3 = @{@"packetNumber": @"3"};
-NSData * data3 = [@"Data Packet 3" dataUsingEncoding:NSUTF8StringEncoding];
-id dataPacket3 = [NiFiDataPacket dataPacketWithAttributes:attributes3 data:data3];
-[transaction sendData:dataPacket3];
-
 NiFiTransactionResult *transactionResult = [transaction confirmAndComplete];
 ```
 
@@ -60,6 +55,33 @@ NiFiTransactionResult *transactionResult = [transaction confirmAndComplete];
 As an Objective-C Cocoa Framework, s2s can be imported and used from Swift. 
 In order to do this, see Apple's 
 [Developer Guide for mixing Objective-C and Swift](https://developer.apple.com/library/content/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html)
+
+## Demo App and Framework Test Plan
+
+The functionality of this framework is verified by two methods:
+* Automated testing via XCode unit tests in the s2sTests target
+* Manual testing via included demo app
+
+In addition to verifying functionality, both serve as good examples of 
+how to use the framework API.
+
+To run the tests, select 's2sTests' as the active scheme in XCode, switch to the Test Navigator in the left panel, and click the play icon next to a test or test suite to run the tests.
+
+To run the demo app, select 'Demo' as the active scheme in XCode and click the Build and Play scheme button.
+
+## Security
+
+The S2S Framework can use TLS when communicating to a NiFI server, provided the NiFi server is 
+configured for secure communication.
+
+If a NiFi server is using a certificate signed by a [trusted root Certificate Authority](https://support.apple.com/en-us/HT204132), 
+all that is required is to configure the stie-to-site client to secure = true. HTTPS will be used as the 
+transport protocol.
+
+If the NiFi server is using a self-signed certificate, your app using the S2S framework 
+must be made aware of the CA. See Apple's documentation for doing this: [https://support.apple.com/en-ca/HT204460].
+
+Client authentication to the NiFi server is currently supported via username and password credentials.
 
 ## TODOs and Planned Features
 * Local flow file buffering with persistence
