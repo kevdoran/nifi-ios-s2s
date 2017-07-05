@@ -10,3 +10,6 @@
 
 # XCode User Data Dir
 xcuserdata/
+
+# Carthage
+Carthage/Build

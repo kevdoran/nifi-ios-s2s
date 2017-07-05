@@ -187,21 +187,14 @@
     return self;
 }
 
-- (nonnull NSObject <NiFiTransaction> *)createTransaction {
+- (nullable NSObject <NiFiTransaction> *)createTransaction {
     @throw [NSException
             exceptionWithName:NSInternalInconsistencyException
             reason:[NSString stringWithFormat:@"You must override %@ in a subclass", NSStringFromSelector(_cmd)]
             userInfo:nil];
 }
 
-- (nonnull NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *)urlSession {
-    @throw [NSException
-            exceptionWithName:NSInternalInconsistencyException
-            reason:[NSString stringWithFormat:@"You must override %@ in a subclass", NSStringFromSelector(_cmd)]
-            userInfo:nil];
-}
-
-- (bool) isSecure {
+- (nullable NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *)urlSession {
     @throw [NSException
             exceptionWithName:NSInternalInconsistencyException
             reason:[NSString stringWithFormat:@"You must override %@ in a subclass", NSStringFromSelector(_cmd)]

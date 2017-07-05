@@ -15,8 +15,10 @@
  * See the associated NOTICE file for additional information regarding copyright ownership.
  */
 
-#import <XCTest/XCTest.h>
+// # define RUN_INTEGRATION_TESTS
+# ifdef RUN_INTEGRATION_TESTS
 
+#import <XCTest/XCTest.h>
 #import "s2s.h"
 
 @interface s2sTests : XCTestCase
@@ -34,8 +36,7 @@
     [super tearDown];
 }
 
-// # define RUN_INTEGRATION_TESTS
-# ifdef RUN_INTEGRATION_TESTS
+
 - (void)testSiteToSiteUsage {
 
     NiFiSiteToSiteClientConfig * s2sConfig = [[NiFiSiteToSiteClientConfig alloc] init];
@@ -117,6 +118,6 @@
     XCTAssertEqual(3, transactionResult.dataPacketsTransferred);
 }
 
-# endif // RUN_INTEGRATION_TESTS
-
 @end
+
+# endif // RUN_INTEGRATION_TESTS

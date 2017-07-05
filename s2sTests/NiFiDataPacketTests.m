@@ -62,25 +62,26 @@
 
 - (void)testStringFactoryMethod {
     NiFiDataPacket *testDataPacket = [NiFiDataPacket dataPacketWithString:@"test"];
+    [testDataPacket setAttributeValue:@"value1" forAttributeKey:@"key1"];
     
     XCTAssertNotNil(testDataPacket);
     XCTAssertNotNil([testDataPacket attributes]);
-    XCTAssertEqual(0, [[testDataPacket attributes] count]);
+    XCTAssertEqual(1, [[testDataPacket attributes] count]);
     XCTAssertNotNil([testDataPacket data]);
     XCTAssertNotNil([testDataPacket dataStream]);
     XCTAssertEqual(4, [testDataPacket dataLength]);
 }
 
-- (void)testInputStreamFromFileFactoryMethod {
+- (void)testInputStreamFactoryMethod {
     // Create temporary file from which to create an input stream
-    NSString *fileName = [NSString stringWithFormat:@"%@_%@", [[NSProcessInfo processInfo] globallyUniqueString], @"testfile.txt"];
-    NSURL *fileURL = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:fileName]];
+    NSString *fileName = [NSString stringWithFormat:@"%@_%@", [[NSProcessInfo processInfo] globallyUniqueString], @"testfile1.txt"];
+    NSString *filePath = [NSTemporaryDirectory() stringByAppendingPathComponent:fileName];
     NSData *data = [@"test" dataUsingEncoding:NSUTF8StringEncoding];
-    [data writeToURL:fileURL atomically:YES];
+    [data writeToFile:filePath atomically:YES];
 
     // Create data packet wrapper for input stream from file
     NSDictionary *attributes = @{ @"filename": fileName };
-    NSInputStream *dataStream = [NSInputStream inputStreamWithURL:fileURL];
+    NSInputStream *dataStream = [NSInputStream inputStreamWithFileAtPath:filePath];
     NiFiDataPacket *testDataPacket = [NiFiDataPacket dataPacketWithAttributes:attributes dataStream:dataStream dataLength:4];
     
     XCTAssertNotNil(testDataPacket);
@@ -88,6 +89,28 @@
     XCTAssertEqual(1, [[testDataPacket attributes] count]);
     XCTAssertNotNil([testDataPacket dataStream]);
     XCTAssertEqual(4, [testDataPacket dataLength]);
+    
+    [[NSFileManager defaultManager] removeItemAtPath:filePath error:nil];
+}
+
+- (void)testFileFactoryMethod {
+    // Create temporary file from which to create an input stream
+    NSString *fileName = [NSString stringWithFormat:@"%@_%@", [[NSProcessInfo processInfo] globallyUniqueString], @"testfile2.txt"];
+    NSString *filePath = [NSTemporaryDirectory() stringByAppendingPathComponent:fileName];
+    NSData *data = [@"test" dataUsingEncoding:NSUTF8StringEncoding];
+    [data writeToFile:filePath atomically:YES];
+    
+    // Create data packet wrapper for input stream from file using file factory method
+    NiFiDataPacket *testDataPacket = [NiFiDataPacket dataPacketWithFileAtPath:filePath];
+    [testDataPacket setAttributeValue:@"value1" forAttributeKey:@"key1"];
+    
+    XCTAssertNotNil(testDataPacket);
+    XCTAssertNotNil([testDataPacket attributes]);
+    XCTAssertEqual(1, [[testDataPacket attributes] count]);
+    XCTAssertNotNil([testDataPacket dataStream]);
+    XCTAssertEqual(4, [testDataPacket dataLength]);
+    
+    [[NSFileManager defaultManager] removeItemAtPath:filePath error:nil];
 }
 
 @end

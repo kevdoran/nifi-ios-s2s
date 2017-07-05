@@ -18,11 +18,10 @@
 #import "AppDelegate.h"
 
 @interface AppDelegate ()
-
+@property UIBackgroundTaskIdentifier nifiSiteToSiteServiceTask;
 @end
 
 @implementation AppDelegate
-
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
@@ -39,6 +38,23 @@
 - (void)applicationDidEnterBackground:(UIApplication *)application {
     // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
     // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+    _nifiSiteToSiteServiceTask = [application beginBackgroundTaskWithName:@"NiFiS2STask" expirationHandler:^{
+        
+        // Clean up any unfinished task business by marking where you
+        // stopped or ending the task outright.
+        
+        [application endBackgroundTask:_nifiSiteToSiteServiceTask];
+        _nifiSiteToSiteServiceTask = UIBackgroundTaskInvalid;
+    }];
+    
+    // Start the long-running task and return immediately.
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        
+        // Do the work associated with the task, preferably in chunks.
+        
+        [application endBackgroundTask:_nifiSiteToSiteServiceTask];
+        _nifiSiteToSiteServiceTask = UIBackgroundTaskInvalid;
+    });
 }
 
 
@@ -54,6 +70,11 @@
 
 - (void)applicationWillTerminate:(UIApplication *)application {
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+}
+
+
+- (void)application:(UIApplication *)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
+  // TODO, implement this to give the app background site-to-site batch processing opportunities
 }
 
 

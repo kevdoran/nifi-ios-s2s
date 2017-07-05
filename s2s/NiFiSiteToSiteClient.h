@@ -31,6 +31,7 @@ typedef enum {
     // RAW_SOCKET, // TODO, if needed, there is also a the socket variant of the NiFi Site-to-Site protocol that could be implemented
 } NiFiSiteToSiteTransportProtocol;
 
+
 typedef enum {
     TRANSACTION_STARTED,
     DATA_EXCHANGED,
@@ -49,7 +50,9 @@ typedef enum {
                                       dataStream:(nullable NSInputStream *)dataStream
                                       dataLength:(NSUInteger)length;
 + (nonnull instancetype)dataPacketWithString:(nonnull NSString *)string;
-//+ (nonnull instancetype)dataPacketWithFileAtPath:(nonnull NSString *)filePath;
++ (nullable instancetype)dataPacketWithFileAtPath:(nonnull NSString *)filePath;
+
+- (void)setAttributeValue:(nullable NSString *)value forAttributeKey:(nonnull NSString *)key;
 
 - (nonnull NSDictionary<NSString *, NSString *> *)attributes;
 - (nullable NSData *)data;
@@ -57,11 +60,6 @@ typedef enum {
 - (NSUInteger)dataLength;
 
 @end
-
-// TODO add NiFiMutableDataPacket to public API ?
-//@interface NiFiMutableDataPacket : NiFiDataPacket
-//@end
-
 
 @protocol NiFiCommunicant <NSObject>
 - (nullable NSURL *)url;
@@ -77,16 +75,17 @@ typedef enum {
 - (bool)shouldBackoff;
 @end
 
+
 @protocol NiFiTransaction <NSObject>
+- (nonnull NSString *)transactionId;
 - (NiFiTransactionState)transactionState;
 - (void)sendData:(nonnull NiFiDataPacket *)data;
-- (nullable NiFiDataPacket *)receive;
-- (void)cancel;
-- (void)cancelWithExplaination:(nonnull NSString *)explaination;
-- (void)error;
-- (nonnull NiFiTransactionResult *)confirmAndComplete;
-- (nonnull NSObject <NiFiCommunicant> *)getCommunicant;
+- (void)cancel; // cancel the transaction
+- (void)error;  // mark the transaction as having encountered an error
+- (nullable NiFiTransactionResult *)confirmAndCompleteOrError:(NSError *_Nullable *_Nullable)error;
+- (nullable NSObject <NiFiCommunicant> *)getCommunicant;
 @end
+
 
 @interface NiFiSiteToSiteClientConfig : NSObject <NSCopying>
 @property (nonatomic, retain, readwrite, nonnull) NSString *host;  // no default, must be set
@@ -94,20 +93,22 @@ typedef enum {
 @property (nonatomic, retain, readwrite, nonnull) NSString *portId;  // no default, must be set
 @property (nonatomic, readwrite) NiFiSiteToSiteTransportProtocol transportProtocol;  // defaults to HTTP
 @property (nonatomic, readwrite) bool secure;  // defaults to false
-@property (nonatomic, assign, readwrite, nullable) NSString *username;  // client credentials for two-way auth; ignored if secure is false
-@property (nonatomic, assign, readwrite, nullable) NSString *password;  // client credentials for two-way auth; ignored if secure is false
+@property (nonatomic, retain, readwrite, nullable) NSString *username;  // client credentials for two-way auth; ignored if secure is false
+@property (nonatomic, retain, readwrite, nullable) NSString *password;  // client credentials for two-way auth; ignored if secure is false
 - (nonnull instancetype)init;
 @end
 
+
 @interface NiFiSiteToSiteClient : NSObject
 + (nonnull instancetype)clientWithConfig:(nonnull NiFiSiteToSiteClientConfig *)config;
-- (nonnull NSObject <NiFiTransaction> *)createTransaction;
-- (nonnull NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *_Nonnull)urlSession;
-- (bool)isSecure;
+- (nullable NSObject <NiFiTransaction> *)createTransaction;
+- (nullable NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *_Nonnull)urlSession;
 @end
+
 
 @interface NiFiUtil : NSObject
 + (nonnull NSString *)NiFiTransactionStateToString:(NiFiTransactionState)state;
 @end
+
 
 #endif /* NiFiSiteToSiteClient_h */

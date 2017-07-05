@@ -34,16 +34,25 @@ NS_ENUM(NSInteger)
     NiFiErrorHttpStatusCode = 1000, // note, 1000-1999 are reserved for errors relating to HTTP status codes
                                     // to pass the HTTP Status code in the error code, you can add it to this,
                                     // e.g., 404 becomes 1404 (= 1000 + 404)
+                                    // To extract the HTTP Status code, you can do:
+                                    //   int httpStatusCode = errorStatusCode - NiFiErrorHttpStatusCode
     
     // Site-to-Site
     NiFiErrorSiteToSiteClient = 2000,
+    NiFiErrorSiteToSiteClientCouldNotCreateTransaction = 2001,
     
-    // Transaction
+    // Site-to-Site Transaction
     NiFiErrorSiteToSiteTransaction = 3000,
+
+    // Site-to-Site Database
+    NiFiErrorSiteToSiteDatabase = 4000,
+    NiFiErrorSiteToSiteDatabaseReadFailed = 4001,
+    NiFiErrorSiteToSiteDatabaseWriteFailed = 4002,
+    NiFiErrorSiteToSiteDatabaseTransactionFailed = 4003,
     
     // HTTP Rest API Client
-    NiFiErrorHttpRestApiClient = 4000,
-    NiFiErrorHttpRestApiClientCouldNotFormURL = 4001
+    NiFiErrorHttpRestApiClient = 5000,
+    NiFiErrorHttpRestApiClientCouldNotFormURL = 5001
     
 };
 

@@ -19,7 +19,7 @@
 #import <XCTest/XCTest.h>
 #import "NiFiHttpSiteToSiteClient.h"
 
-#define MOCK_SERVER_SIDE_TRANSACTION_TTL 6
+#define MOCK_SERVER_SIDE_TRANSACTION_TTL 4
 
 @interface NiFiHttpTransactionTests : XCTestCase
 @end
@@ -64,7 +64,7 @@
 
 - (NSInteger)sendFlowFiles:(nonnull NiFiDataPacketEncoder *)dataPacketEncoder
            withTransaction:(nonnull NiFiTransactionResource *)transactionResource
-                     error:(NSError *_Nullable *_Nonnull)error {
+                     error:(NSError *_Nullable *_Nullable)error {
     [dataPacketEncoder getEncodedData];
     _dataPacketsSentCount += [dataPacketEncoder getDataPacketCount];
     return [dataPacketEncoder getEncodedDataCrcChecksum];
@@ -72,7 +72,7 @@
 
 - (nullable NiFiTransactionResult *)endTransaction:(nonnull NSString *)transactionUrl
                                       responseCode:(NiFiTransactionResponseCode)responseCode
-                                             error:(NSError *_Nullable *_Nonnull)error {
+                                             error:(NSError *_Nullable *_Nullable)error {
     NiFiTransactionResult *returnVal = [[NiFiTransactionResult alloc] initWithResponseCode:responseCode
                                                                     dataPacketsTransferred:_dataPacketsSentCount
                                                                                    message:nil
@@ -99,7 +99,7 @@
     [transaction sendData:dataPacket1];
     XCTAssertEqual(DATA_EXCHANGED, [transaction transactionState]);
     
-    NiFiTransactionResult *transactionRsult = [transaction confirmAndComplete];
+    NiFiTransactionResult *transactionRsult = [transaction confirmAndCompleteOrError:nil];
     XCTAssertEqual(TRANSACTION_COMPLETED, [transaction transactionState]);
     XCTAssertEqual(1, [transactionRsult dataPacketsTransferred]);
 }
@@ -111,7 +111,7 @@
     
     NiFiHttpTransaction *transaction = [[NiFiHttpTransaction alloc] initWithPortId:@"testportid" httpRestApiClient:mockApiClient];
     
-    uint sleepIntervalSeconds = 4;
+    uint sleepIntervalSeconds = MOCK_SERVER_SIDE_TRANSACTION_TTL;
     sleep(sleepIntervalSeconds);
     [transaction cancel];
     XCTAssertTrue(mockApiClient.ttlExtensionCallCount >= floor((double)MOCK_SERVER_SIDE_TRANSACTION_TTL / (double)sleepIntervalSeconds));

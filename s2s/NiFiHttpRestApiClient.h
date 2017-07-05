@@ -30,7 +30,8 @@
 
 
 @interface NiFiTransactionResource : NSObject
-@property (nonatomic, assign, readwrite, nullable) NSString *transactionId;
+- (nonnull instancetype)initWithTransactionId:(nonnull NSString *)transactionId;
+@property (nonatomic, assign, readwrite, nonnull) NSString *transactionId;
 @property (nonatomic, assign, readwrite, nullable) NSString *transactionUrl;
 @property (nonatomic, readwrite) NSInteger serverSideTtl;
 @property (nonatomic, readwrite) NSUInteger flowFilesSent;
@@ -59,11 +60,11 @@
 
 - (NSInteger)sendFlowFiles:(nonnull NiFiDataPacketEncoder *)dataPacketEncoder
            withTransaction:(nonnull NiFiTransactionResource *)transactionResource
-                     error:(NSError *_Nullable *_Nonnull)error; // also returns -1 if an error occured
+                     error:(NSError *_Nullable *_Nullable)error; // also returns -1 if an error occured
 
 - (nullable NiFiTransactionResult *)endTransaction:(nonnull NSString *)transactionUrl
                                       responseCode:(NiFiTransactionResponseCode)responseCode
-                                             error:(NSError *_Nullable *_Nonnull)error;
+                                             error:(NSError *_Nullable *_Nullable)error;
 
 @end
 

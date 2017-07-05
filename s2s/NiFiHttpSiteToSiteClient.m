@@ -47,6 +47,10 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
     return self;
 }
 
+- (NSString *)transactionId {
+    return _transactionResource.transactionId;
+}
+
 - (void) sendData:(NiFiDataPacket *)data {
     [_dataPacketEncoder appendDataPacket:data];
     _transactionState = DATA_EXCHANGED;
@@ -68,41 +72,27 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
     _shouldKeepAlive = false;
 }
 
-- (nonnull NiFiTransactionResult *) confirmAndComplete {
-    [self confirm];
-    return [self complete];
+- (nullable NiFiTransactionResult *)confirmAndCompleteOrError:(NSError *_Nullable *_Nullable)error {
+    [self confirmOrError:error];
+    if (error && *error) {
+        return nil;
+    } else {
+        return [self completeOrError:error];
+    }
 }
 
-- (void) confirm {
-    /** TODO evaluate: The usage of a data encoder as a collector for "sent" data packets is potentially suboptimal if
-     ** there is a significant ammount of time between the first send() and call to confirm(), during which we could
-     ** have started transmitting data.
-     **
-     ** On Apple's iOS platform it is nontrivial to open an output stream for an HTTP POST body binary stream.
-     ** Essentially, there is no iOS Core Framework equivalent for Java's HttpURLConnection getOutputStream().
-     ** One possible improvement for would be by implementing something like a bound stream pair:
-     **   https://stackoverflow.com/questions/18348863/ios-how-to-upload-a-large-asset-file-into-sever-by-streaming
-     ** Another possibility would be to build a custom HTTP client implementation on top of raw sockets :-|
-     **
-     ** This is only suboptimal in the case of non-queued transmission. In the case of queuing to a local repository
-     ** or database, and transmission in batch processing of the queue, the approach used in the ccerent implementation
-     ** has no downside. The only downside would be long-lived transactions without queuing, where the data transmission
-     ** time incurred at confirmation time would be significant. Even in that case... holding open a long-lived http
-     ** connection has potential for failure, especially on mobile devices (perhaps this is why iOS networking
-     ** APIs are opinionated in their design to make this difficult).
-     **/
-    NSError *error;
+- (void) confirmOrError:(NSError *_Nullable *_Nullable)error {
     NSUInteger serverCrc = [_restApiClient sendFlowFiles:_dataPacketEncoder
                                          withTransaction:_transactionResource
-                                                   error:&error];
+                                                   error:error];
+    
     NSUInteger expectedCrc = [_dataPacketEncoder getEncodedDataCrcChecksum];
     
     NSLog(@"NiFi Peer returned CRC code: %ld, expected CRC was: %ld", (unsigned long)serverCrc, (unsigned long)expectedCrc);
     
     if (serverCrc != expectedCrc) {
-        _transactionState = TRANSACTION_ERROR;
-        _shouldKeepAlive = false;
-        [_restApiClient endTransaction:_transactionResource.transactionUrl responseCode:BAD_CHECKSUM error:&error];
+        [_restApiClient endTransaction:_transactionResource.transactionUrl responseCode:BAD_CHECKSUM error:error];
+        [self error];
     }
     else {
         _transactionState = TRANSACTION_CONFIRMED;
@@ -110,22 +100,29 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
     }
 }
 
-- (nonnull NiFiTransactionResult *)complete {
-    NSError *error;
+- (nullable NiFiTransactionResult *)completeOrError:(NSError *_Nullable *_Nullable)error {
+    // Must be called after confirm interacton is done.
+    if (![[self class] assertExpectedState:TRANSACTION_CONFIRMED equalsActualState:_transactionState]) {
+        [self error];
+    }
+    
     NiFiTransactionResult *transactionResult = [_restApiClient endTransaction:_transactionResource.transactionUrl
                                                                  responseCode:CONFIRM_TRANSACTION
-                                                                        error:&error];
-    _transactionState = TRANSACTION_COMPLETED;
-    
-    transactionResult.duration = [[NSDate date] timeIntervalSinceDate:_startTime];
-    _shouldKeepAlive = false;
-    
-    return transactionResult;
+                                                                        error:error];
+    if (error && *error) {
+        [self error];
+        return nil;
+    } else {
+        _transactionState = TRANSACTION_COMPLETED;
+        transactionResult.duration = [[NSDate date] timeIntervalSinceDate:_startTime];
+        _shouldKeepAlive = false;
+        return transactionResult;
+    }
 }
 
 
 
-- (nonnull NSObject <NiFiCommunicant> *)getCommunicant {
+- (nullable NSObject <NiFiCommunicant> *)getCommunicant {
     return [[NiFiPeer alloc] initWithUrl:[_restApiClient baseUrl]];
 }
 
@@ -136,7 +133,7 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
             userInfo:nil];
 }
 
-- (void) scheduleNextKeepAliveWithTTL:(NSTimeInterval)ttl {
+- (void)scheduleNextKeepAliveWithTTL:(NSTimeInterval)ttl {
     // schedule another keep alive if needed
     if (_shouldKeepAlive) {
         NSLog(@"Scheduling background task to extend transaction TTL");
@@ -148,10 +145,20 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
                     [self transactionResource] &&
                     [self transactionResource].transactionUrl) {
                 [_restApiClient extendTTLForTransaction:_transactionResource.transactionUrl error:nil];
+                [self scheduleNextKeepAliveWithTTL:ttl]; // this will put the next "keep-alive heartbeat" task on an async queue
             }
-            [self scheduleNextKeepAliveWithTTL:ttl]; // this will put the next "keep-alive heartbeat" task on an async queue
         });
     }
+}
+
++ (bool)assertExpectedState:(NiFiTransactionState)expectedState equalsActualState:(NiFiTransactionState)actualState {
+    if (expectedState != actualState) {
+        NSLog(@"NiFiTransaction encountered internal state error. Expected to be in state %@, actually in state %@",
+              [NiFiUtil NiFiTransactionStateToString:expectedState],
+              [NiFiUtil NiFiTransactionStateToString:actualState]);
+        return false;
+    }
+    return true;
 }
 
 @end
@@ -167,11 +174,11 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
     return self;
 }
 
-- (nonnull NSObject <NiFiTransaction> *)createTransaction {
+- (nullable NSObject <NiFiTransaction> *)createTransaction {
     return [self createTransactionWithURLSession:[NSURLSession sharedSession]];
 }
 
-- (nonnull NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *)urlSession {
+- (nullable NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *)urlSession {
     NSURLComponents *apiBaseUrlComponents = [[NSURLComponents alloc] init];
     apiBaseUrlComponents.scheme = super.config.secure ? @"https" : @"http";
     apiBaseUrlComponents.host = super.config.host;
@@ -188,13 +195,6 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
                                                                          clientCredential:credential
                                                                                urlSession:(NSObject<NSURLSessionProtocol> *)urlSession];
     return [[NiFiHttpTransaction alloc] initWithPortId:super.config.portId httpRestApiClient:restApiClient];
-}
-
-- (bool)isSecure {
-    @throw [NSException
-            exceptionWithName:NSInternalInconsistencyException
-            reason:[NSString stringWithFormat:@"You must override %@ in a subclass", NSStringFromSelector(_cmd)]
-            userInfo:nil];
 }
 
 @end

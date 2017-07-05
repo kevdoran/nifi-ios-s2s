@@ -15,16 +15,27 @@
  * See the associated NOTICE file for additional information regarding copyright ownership.
  */
 
-#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
+#import <XCTest/XCTest.h>
+#import "NiFiSiteToSiteServicePrivate.h"
 
-//! Project version number for s2s.
-FOUNDATION_EXPORT double s2sVersionNumber;
+@interface NiFiSiteToSiteServiceTests : XCTestCase
+@end
 
-//! Project version string for s2s.
-FOUNDATION_EXPORT const unsigned char s2sVersionString[];
+@implementation NiFiSiteToSiteServiceTests
 
-// In this header, you should import all the public headers of your framework using statements like #import <s2s/PublicHeader.h>
-#import "NiFiSiteToSiteClient.h"
-#import "NiFiSiteToSiteService.h"
-#import "NiFiError.h"
+- (void)setUp {
+    [super setUp];
+    // Put setup code here.
+}
 
+- (void)tearDown {
+    // Put teardown code here.
+    [super tearDown];
+}
+
+- (void)testOne {
+    
+}
+
+@end

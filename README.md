@@ -1,24 +1,40 @@
-# Apache NiFi Site-to-Site Cocoa Framework (iOS and MacOS)
+# Apache NiFi Site-to-Site iOS Cocoa Framework 
 
-A lightweight, easy-to-use, Cocoa Framework for sending data to NiFi via the Site-to-Site protocol implemented in Objective-C with only Apple-platform-provided Objective-C/C library dependencies. This Cocoa Framework will run on all major Apple platforms, such as iOS and MacOS.
+A lightweight, easy-to-use, Cocoa Framework for sending data to NiFi via the Site-to-Site protocol implemented in Objective-C with primarily Apple-provided Objective-C/C library dependencies. Synchronous and asynchronous interface methods are provided via a low-level site-to-site client and a higher-level site-to-site service that wraps the client. This Cocoa framework will run on iOS devices and simulators.
 
-This is currently a work in progress.
+For the most part, this implementation uses dependencies provided by the Apple platform. The one exception to this is the third-party FMDB, a lightweight SQLite interface, which is used internally by s2s as a mechanism for persistent queuing of flow file data packets when the asynchronous interface is invoked.
 
-## Structure 
+## Structure and XCode Schemes
 
-* s2s: iOS Framework
-* s2sTests: Tests for the s2s framework
-* Demo: A Demo app showing basic usage of the s2s framework
+* s2s: iOS Cocoa Framework
+* s2sTests: Tests for the s2s iOS Cocoa Framework
+* Demo: A Demo app showing basic usage of the s2s iOS Cocoa Framework
 
 ## Development Environment Requirements
 
 * A Mac (tested on MacOS 10.12.5)
 * XCode (tested with XCode 8)
+* [The latest version of Carthage](https://github.com/Carthage/Carthage/releases), a dependency manager used for pulling in FMDB, a third-party framework used by s2s
 * An iOS device or simulator (tested on iOS 9 and later, running on iPhone SE simulator device)
 
 ## Building
 
-The included XCode Project can be used for building using XCode (IDE or using command-line tools).
+The included XCode Project (nifisitetosite.xcodeproj) can be used for building using the XCode IDE or XCode command-line tools.
+
+The s2s 
+
+Here are the commands for building and running the test suite from the command line:
+
+```shell
+carthage bootstrap
+xcodebuild test -scheme s2sTests -destination 'platform=iOS Simulator,name=iPhone 7'
+
+```
+
+The first command will run Carthage in the project directory. It uses the top-level Cartfile as its input and will download and build FMDB.
+The second command builds s2s and s2sTests, which are run in the specified destination, in this case an iPhone 7 iOS Simulator device.
+
+The included XCode project case also be opened in the XCode IDE, as its own standalone project or added to a workspace containing another project (e.g., the app for which you want to use the s2s framework).
 
 ## Usage
 

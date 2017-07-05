@@ -86,7 +86,7 @@
     [transaction sendData:textFlowFile];
     
     // Complete Transaction
-    NiFiTransactionResult *result = [transaction confirmAndComplete];
+    NiFiTransactionResult *result = [transaction confirmAndCompleteOrError:nil];
     
     // Update Flow File counter and View lable
     _totalFlowFileCount += result.dataPacketsTransferred;

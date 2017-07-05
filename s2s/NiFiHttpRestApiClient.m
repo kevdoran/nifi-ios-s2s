@@ -46,10 +46,10 @@ static const int SECONDS_TO_NANOS = 1000000000;
 
 @implementation NiFiTransactionResource
 
-- (nonnull instancetype)init {
+- (nonnull instancetype)initWithTransactionId:(nonnull NSString *)transactionId {
     self = [super init];
     if(self != nil) {
-        _transactionId = nil;
+        _transactionId = transactionId;
         _transactionUrl = nil;
         _serverSideTtl = -1;
         _flowFilesSent = 0;
@@ -156,44 +156,49 @@ static const int SECONDS_TO_NANOS = 1000000000;
         switch (response.statusCode) {
             case 200: // applying Postel's Principle to server response code
             case 201: {
-                transactionResource = [[NiFiTransactionResource alloc] init];
                 // Process response headers
                 NSDictionary *headers = response.allHeaderFields;
                 NSString *locationUriIntent = [headers objectForKey:HTTP_HEADER_LOCATION_URI_INTENT_NAME];
                 if (locationUriIntent && [locationUriIntent isEqualToString:HTTP_HEADER_LOCATION_URI_INTENT_VALUE]) {
-                    transactionResource.transactionUrl = [headers objectForKey:HTTP_HEADER_LOCATION];
-                    transactionResource.transactionId = [[transactionResource.transactionUrl componentsSeparatedByString:@"/"] lastObject];
-                }
-                NSString *serverSideTtl = [headers objectForKey:HTTP_HEADER_SERVER_SIDE_TRANSACTION_TTL];
-                if (serverSideTtl) {
-                    transactionResource.serverSideTtl = [serverSideTtl integerValue];
-                }
-                
-                // Process response body, which we expect to be in the form:
-                // {"flowFileSent":0,
-                //  "responseCode":1,
-                //   "message":"Handshake properties are valid, and port is running.\
-                //              A transaction is created:XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-                // }
-                NSError *jsonError;
-                NSDictionary *transactionJson = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&jsonError];
-                if (!jsonError) {
-                    //flowFileSent
-                    NSNumber *flowFileSent = [transactionJson objectForKey:@"flowFileSent"];
-                    if (flowFileSent) {
-                        transactionResource.flowFilesSent = [flowFileSent unsignedIntegerValue];
+                    NSString *transactionUrl = [headers objectForKey:HTTP_HEADER_LOCATION];
+                    NSString *transactionId = [[transactionUrl componentsSeparatedByString:@"/"] lastObject];
+                    
+                    if (transactionId) {
+                        transactionResource = [[NiFiTransactionResource alloc] initWithTransactionId:transactionId];
+                        transactionResource.transactionUrl = transactionUrl;
+                        
+                        NSString *serverSideTtl = [headers objectForKey:HTTP_HEADER_SERVER_SIDE_TRANSACTION_TTL];
+                        if (serverSideTtl) {
+                            transactionResource.serverSideTtl = [serverSideTtl integerValue];
+                        }
+                        
+                        // Process response body, which we expect to be in the form:
+                        // {"flowFileSent":0,
+                        //  "responseCode":1,
+                        //   "message":"Handshake properties are valid, and port is running.\
+                        //              A transaction is created:XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                        // }
+                        NSError *jsonError;
+                        NSDictionary *transactionJson = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&jsonError];
+                        if (!jsonError) {
+                            //flowFileSent
+                            NSNumber *flowFileSent = [transactionJson objectForKey:@"flowFileSent"];
+                            if (flowFileSent) {
+                                transactionResource.flowFilesSent = [flowFileSent unsignedIntegerValue];
+                            }
+                            //responseCode
+                            NSNumber *responseCode = [transactionJson objectForKey:@"responseCode"];
+                            if (responseCode) {
+                                transactionResource.lastResponseCode = (NiFiTransactionResponseCode)[responseCode integerValue];
+                            }
+                            //message
+                            transactionResource.lastResponseMessage = [transactionJson objectForKey:@"message"];
+                        } else {
+                            // Note parsing the body can fail but if the response code was 201 the transaction was still created.
+                            // We will log it and return a transaction and an error output.
+                            *error = jsonError;
+                        }
                     }
-                    //responseCode
-                    NSNumber *responseCode = [transactionJson objectForKey:@"responseCode"];
-                    if (responseCode) {
-                        transactionResource.lastResponseCode = (NiFiTransactionResponseCode)[responseCode integerValue];
-                    }
-                    //message
-                    transactionResource.lastResponseMessage = [transactionJson objectForKey:@"message"];
-                } else {
-                    // Note parsing the body can fail but if the response code was 201 the transaction was still created.
-                    // We will log it and return a transaction and an error output.
-                    *error = jsonError;
                 }
                 
                 break;
@@ -252,14 +257,16 @@ static const int SECONDS_TO_NANOS = 1000000000;
 
 - (NSInteger)sendFlowFiles:(nonnull NiFiDataPacketEncoder *)dataPacketEncoder
             withTransaction:(nonnull NiFiTransactionResource *)transactionResource
-                      error:(NSError *_Nullable *_Nonnull)error {
+                      error:(NSError *_Nullable *_Nullable)error {
     
     NSMutableURLRequest *flowFilesRequest = [transactionResource flowFilesUrlRequest];
     
     if (!flowFilesRequest) {
-        *error = [NSError errorWithDomain:NiFiErrorDomain
-                                     code:NiFiErrorHttpRestApiClientCouldNotFormURL
-                                 userInfo:nil];
+        if (error) {
+            *error = [NSError errorWithDomain:NiFiErrorDomain
+                                         code:NiFiErrorHttpRestApiClientCouldNotFormURL
+                                     userInfo:nil];
+        }
     }
     
     [self addAuthTokenHeaderToRequest:&flowFilesRequest error:error];
@@ -275,7 +282,7 @@ static const int SECONDS_TO_NANOS = 1000000000;
                           responseOutput:&response
                              errorOutput:&dataTaskError];
     
-    if (response == nil) {
+    if (error && response == nil) {
         *error = dataTaskError;
         return -1;
     }
@@ -289,9 +296,11 @@ static const int SECONDS_TO_NANOS = 1000000000;
             return [responseBody integerValue];
         }
         default:
-            *error = [NSError errorWithDomain:NiFiErrorDomain
-                                         code:NiFiErrorHttpStatusCode + response.statusCode
-                                     userInfo:nil];
+            if (error) {
+                *error = [NSError errorWithDomain:NiFiErrorDomain
+                                             code:NiFiErrorHttpStatusCode + response.statusCode
+                                         userInfo:nil];
+            }
             return -1;
     }
     
@@ -299,7 +308,7 @@ static const int SECONDS_TO_NANOS = 1000000000;
 
 - (nullable NiFiTransactionResult *)endTransaction:(nonnull NSString *)transactionUrl
                                      responseCode:(NiFiTransactionResponseCode)responseCode
-                                            error:(NSError *_Nullable *_Nonnull)error {
+                                            error:(NSError *_Nullable *_Nullable)error {
     NSURLComponents *urlComponents = [NSURLComponents componentsWithString:transactionUrl];
     
     NSMutableArray *queryItems = urlComponents.queryItems != nil ? [[NSMutableArray alloc] initWithArray:urlComponents.queryItems] : [[NSMutableArray alloc] initWithCapacity:1];
@@ -329,7 +338,9 @@ static const int SECONDS_TO_NANOS = 1000000000;
                              errorOutput:&dataTaskError];
     
     if (response == nil) {
-        *error = dataTaskError;
+        if (error) {
+            *error = dataTaskError;
+        }
         return nil;
     }
     
@@ -350,7 +361,7 @@ static const int SECONDS_TO_NANOS = 1000000000;
         transactionResult.dataPacketsTransferred = [flowFileSentVal integerValue];
     }
     if (responseCodeVal) {
-        transactionResult.responseCode = (NiFiTransactionResponseCode)[responseCodeVal integerValue]; // todo add check and error handling for parse & cast
+        transactionResult.responseCode = (NiFiTransactionResponseCode)[responseCodeVal integerValue];
     }
     return transactionResult;
 }
@@ -360,7 +371,7 @@ static const int SECONDS_TO_NANOS = 1000000000;
 - (void) synchronousDataTaskWithRequest:(NSURLRequest *_Nonnull)request
                              dataOutput:(NSData *_Nullable *_Nonnull)data
                          responseOutput:(NSURLResponse *_Nullable *_Nonnull)response
-                            errorOutput:(NSError *_Nonnull *_Nullable)error {
+                            errorOutput:(NSError *_Nullable *_Nullable)error {
     __block NSData * blockData = nil;
     __block NSURLResponse * blockResponse = nil;
     __block NSError * blockError = nil;
@@ -384,7 +395,9 @@ static const int SECONDS_TO_NANOS = 1000000000;
         }
     }
     else {
-        *error = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorTimedOut userInfo:nil];
+        if (error) {
+            *error = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorTimedOut userInfo:nil];
+        }
     }
 }
 

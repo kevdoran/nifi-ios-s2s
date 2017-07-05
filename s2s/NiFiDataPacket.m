@@ -22,7 +22,7 @@
 /********** NiFiDataPacket Class Cluster Implementation **********/
 
 @interface NiFiDataPacket()
-@property (nonatomic, retain, readwrite, nonnull) NSDictionary<NSString *, NSString *> *attributes;
+@property (nonatomic, retain, readwrite, nonnull) NSMutableDictionary<NSString *, NSString *> *attributes;
 @end
 
 
@@ -63,12 +63,40 @@
                                                     data:[string dataUsingEncoding:NSUTF8StringEncoding]];
 }
 
++ (nullable instancetype)dataPacketWithFileAtPath:(nonnull NSString *)filePath {
+    NSFileManager *fm = [NSFileManager defaultManager];
+    if ([fm isReadableFileAtPath:filePath]) {
+        NSError *fmError;
+        NSDictionary<NSFileAttributeKey, id> *fileAttributes = [fm attributesOfItemAtPath:filePath error:&fmError];
+        if (fmError) {
+            return nil;
+        }
+        NSUInteger dataLength = (NSUInteger)[fileAttributes fileSize];
+        if (!dataLength) {
+            return nil;
+        }
+        NSInputStream *fileInputStream = [NSInputStream inputStreamWithFileAtPath:filePath];
+        return [[NiFiStreamingDataPacket alloc] initWithAttributes:[NSDictionary dictionary]
+                                                        dataStream:fileInputStream
+                                                        dataLength:dataLength];
+    }
+    else {
+        return nil;
+    }
+}
+
 - (nonnull instancetype)initWithAttributes:(nonnull NSDictionary<NSString *, NSString *> *)attributes {
     self = [super init];
     if(self != nil) {
-        _attributes = attributes;
+        _attributes = [NSMutableDictionary dictionaryWithDictionary:attributes];
     }
     return self;
+}
+
+- (void)setAttributeValue:(nullable NSString *)value forAttributeKey:(nonnull NSString *)key {
+    if (key) {
+        [_attributes setValue:value forKey:key];
+    }
 }
 
 - (nullable NSData *)data {
