@@ -21,8 +21,6 @@ For the most part, this implementation uses dependencies provided by the Apple p
 
 The included XCode Project (nifisitetosite.xcodeproj) can be used for building using the XCode IDE or XCode command-line tools.
 
-The s2s 
-
 Here are the commands for building and running the test suite from the command line:
 
 ```shell
