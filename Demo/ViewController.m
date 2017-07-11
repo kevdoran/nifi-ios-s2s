@@ -21,11 +21,9 @@
 @interface ViewController ()
 @property NSInteger totalFlowFileCount;
 @property (strong, nullable) NiFiSiteToSiteClient *s2sClient;
-@property (strong, nullable, atomic) NSURLSession *urlSession;
 @end
 
 @interface URLSessionAuthenticatorDelegate : NSObject <NSURLSessionDelegate>
-- (instancetype)init;
 - (void)URLSession:(NSURLSession *)session didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
  completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler;
 @end
@@ -36,17 +34,20 @@
     [super viewDidLoad];
     [[self view] setBackgroundColor:[UIColor colorWithRed:217.0f/255.0f green:217.0f/255.0f blue:217.0f/255.0f alpha:1.0]];
     
-    // TODO, load this config from plist file
+    // Rather than hardcoded here, this could be loaded from a .plist resource file or similar
     NiFiSiteToSiteClientConfig * s2sConfig = [[NiFiSiteToSiteClientConfig alloc] init];
     s2sConfig.transportProtocol = HTTP;
     s2sConfig.host = @"localhost";
     //s2sConfig.port = [NSNumber numberWithInt:8080];
     //s2sConfig.portId = @"82f79eb6-015c-1000-d191-ee1ef23b1a74";
-    s2sConfig.port = [NSNumber numberWithInt:32794];
+    s2sConfig.port = [NSNumber numberWithInt:32768];
     s2sConfig.portId = @"cb655af6-015c-1000-4b7c-e344b815744d";
     s2sConfig.secure = true;
     s2sConfig.username = @"admin";
     s2sConfig.password = @"admin-password";
+    
+    // add a url session delegate that handles custom server TLS chain validation (not needed for cert signed by root CA)
+    s2sConfig.urlSessionDelegate = [[URLSessionAuthenticatorDelegate alloc] init];
     
     _totalFlowFileCount = 0;
     _s2sClient = [NiFiSiteToSiteClient clientWithConfig:s2sConfig];
@@ -69,17 +70,8 @@
         return;
     }
     
-    // Create a NSURLSession that with handle authenticating our server
-    if (_urlSession == nil) {
-        NSURLSessionConfiguration *urlSessionConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
-        NSObject <NSURLSessionDelegate> *delegateAuthenticator = [[URLSessionAuthenticatorDelegate alloc] init];
-        _urlSession = [NSURLSession sessionWithConfiguration:urlSessionConfig
-                                                    delegate:delegateAuthenticator
-                                               delegateQueue:nil];
-    }
-    
     // Create Site-to-Site Transaction
-    id transaction = [_s2sClient createTransactionWithURLSession:_urlSession];
+    id transaction = [_s2sClient createTransaction];
     
     // Send Data Packet(s) over Transaction
     NiFiDataPacket *textFlowFile = [NiFiDataPacket dataPacketWithString:_userTextField.text];
@@ -96,26 +88,30 @@
 
 @end
 
-// Below you will find a simple example of a NSURLSessionDelegate that will accept self-signed certificates.
-// This is for Demo purposes only and should not be used in production as it is not secure.
-// In production, it is recommended to use a certificate signed by a trusted root Certificate Authority, which
-// will not require implementing your own idenitity verification methods (i.e., https when using a CA-signed
-// certificate will "just work".
-// For more information, please see Apple's developer documentation:
-// https://developer.apple.com/library/content/technotes/tn2232/_index.html
 
+/** Below you will find a simple example of a NSURLSessionDelegate that will accept self-signed certificates.
+ ** THIS IS FOR DEMO PURPOSES ONLY AND SHOULD NOT BE USED IN PRODUCTION AS IT IS NOT SECURE.
+ **
+ ** In production, it is recommended to use a certificate signed by a trusted root Certificate Authority, which
+ ** will not require implementing your own idenitity verification methods (i.e., https when using a CA-signed
+ ** certificate will "just work".
+ **
+ ** If, in a real-world deployment, you must use a self-signed certificate or perform custom TLS chain validatation
+ ** for any reason , do not use this demo code and instead follow Apple's Guidelines in the following article under
+ ** the "Performing Custom TLS Chain Validation" section:
+ ** https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/URLLoadingSystem/Articles/AuthenticationChallenges.html
+ **
+ ** For more information, please see Apple's developer documentation:
+ ** https://developer.apple.com/library/content/technotes/tn2232/_index.html
+ **/
 @implementation URLSessionAuthenticatorDelegate
-- (instancetype)init {
-    self = [super init];
-    if (self != nil) {
-        // additional init
-    }
-    return self;
-}
 
 - (void)URLSession:(NSURLSession *)session didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
  completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler {
-    completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialWithUser:@"admin" password:@"admin-password" persistence:NSURLCredentialPersistenceForSession]);
+    
+    completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialWithUser:@""
+                                                                                         password:@""
+                                                                                      persistence:NSURLCredentialPersistenceForSession]);
 }
 @end
 

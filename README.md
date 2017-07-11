@@ -8,7 +8,8 @@ For the most part, this implementation uses dependencies provided by the Apple p
 
 * s2s: iOS Cocoa Framework
 * s2sTests: Tests for the s2s iOS Cocoa Framework
-* Demo: A Demo app showing basic usage of the s2s iOS Cocoa Framework
+* Demo: An Objective-C iOS App that demonstrates basic usage of the s2s iOS Cocoa Framework (NiFiSiteToSiteClient)
+* DemoSwift: A Swift iOS App that demonstrates slightly more advanced usage of the s2s iOS Cocoa Framework (NiFiSiteToSiteService)
 
 ## Development Environment Requirements
 
@@ -26,7 +27,6 @@ Here are the commands for building and running the test suite from the command l
 ```shell
 carthage bootstrap
 xcodebuild test -scheme s2sTests -destination 'platform=iOS Simulator,name=iPhone 7'
-
 ```
 
 The first command will run Carthage in the project directory. It uses the top-level Cartfile as its input and will download and build FMDB.
@@ -61,27 +61,124 @@ NSData * data2 = [@"Data Packet 2" dataUsingEncoding:NSUTF8StringEncoding];
 id dataPacket2 = [NiFiDataPacket dataPacketWithAttributes:attributes2 data:data2];
 [transaction sendData:dataPacket2];
 
-NiFiTransactionResult *transactionResult = [transaction confirmAndComplete];
+NiFiTransactionResult *transactionResult = [transaction confirmAndCompleteOrError:nil];
 ```
 
 ### From Swift
 
-As an Objective-C Cocoa Framework, s2s can be imported and used from Swift. 
-In order to do this, see Apple's 
-[Developer Guide for mixing Objective-C and Swift](https://developer.apple.com/library/content/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html)
+As an Objective-C Cocoa Framework, s2s also defines a Swift module and can be imported as such into a Swift or mixed-language project.
 
-## Demo App and Framework Test Plan
+To use the s2s module in your Swift code, add the s2s.framework to your target's Linked Frameworks and Libraries, and then add this module import to the top of your .swift source code file:
+
+```
+import s2s
+```
+
+For more background information on mixing Swift and Objective-C, see Apple's 
+[Developer Guide for mixing Objective-C and Swift](https://developer.apple.com/library/content/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html). In this case, we are following the steps for [Importing External Frameworks](https://developer.apple.com/library/content/documentation/Swift/Conceptual/BuildingCocoaApps/MixandMatch.html#//apple_ref/doc/uid/TP40014216-CH10-ID134).
+
+Below are basic usage examples of the s2s Cocoa Framework as a module in Swift.
+
+### SiteToSiteClient
+
+#### Send Synchronously
+
+```swift
+let s2sClientConfig = NiFiSiteToSiteClientConfig()
+s2sClientConfig.host = "localhost"
+s2sClientConfig.port = 32768
+s2sClientConfig.portId = "cb655af6-015c-1000-4b7c-e344b815744d"
+
+let s2sClient = NiFiSiteToSiteClient(config: s2sClientConfig)
+
+let transaction = s2sClient.createTransaction()
+
+let data1 = NiFiDataPacket(attributes: ["packetNumber": "1"],
+                           data: "Data Packet 1".data(using: String.Encoding.utf8))
+transaction?.sendData(data1)
+
+let data2 = NiFiDataPacket(attributes: ["packetNumber": "2"],
+                           data: "Data Packet 2".data(using: String.Encoding.utf8))
+transaction?.sendData(data2)
+
+do {
+    let transactionResult = try transaction?.confirmAndCompleteOrError()
+    print("Sent", transactionResult!.dataPacketsTransferred,  "packets!")
+} catch {
+    print(error.localizedDescription)
+}
+```
+
+### SiteToSiteService
+
+#### Send asynchronously
+```swift
+let s2sClientConfig = NiFiSiteToSiteClientConfig()
+s2sClientConfig.host = "localhost"
+s2sClientConfig.port = 8080
+s2sClientConfig.portId = "cb655af6-015c-1000-4b7c-e344b815744d"
+
+let data1 = NiFiDataPacket(attributes: ["packetNumber": "1"],
+                           data: "Data Packet 1".data(using: String.Encoding.utf8))
+
+let data2 = NiFiDataPacket(attributes: ["packetNumber": "2"],
+                           data: "Data Packet 2".data(using: String.Encoding.utf8))
+
+let packetsToSend = [data1, data2];
+
+NiFiSiteToSiteService.sendDataPackets(packetsToSend, config: s2sClientConfig) { (transactionResult, error) in
+    print("Sent", transactionResult!.dataPacketsTransferred,  "packets!")
+}
+```
+
+##### Add to local persistent queue be sent at some point in the future, with retry, age-off, etc.
+
+```swift
+import s2s
+
+// ...
+
+// Early in the app, configure and store this somewhere
+let s2sClientConfig = NiFiQueuedSiteToSiteClientConfig()
+s2sClientConfig.host = "localhost"
+s2sClientConfig.port = 8080
+s2sClientConfig.portId = "82f79eb6-015c-1000-d191-ee1ef23b1a74"
+s2sClientConfig.secure = false
+s2sClientConfig.dataPacketPrioritizer = NiFiNoOpDataPacketPrioritizer(fixedTTL: 60.0)
+
+// ...
+
+// Later, when we have data to send.
+let dataPacket = NiFiDataPacket(attributes: ["key1": "value1"],
+                                data: "This is the content of the data packet".data(using: String.Encoding.utf8))
+NiFiSiteToSiteService.enqueueDataPacket(dataPacket, config: s2sClientConfig, completionHandler: queuedOperationCompleted)
+
+// ...
+
+// At any point in the future, for instance from a dispatched task, child thread, or within a handler for background processing notifications from the OS.
+NiFiSiteToSiteService.processQueuedPackets(with: self.s2sClientConfig,
+                                           completionHandler: self.queuedOperationCompleted)
+
+// this is the function we are passing as a callback to enqueueDataPacket and processQueuedPackets calls
+func queuedOperationCompleted(status: NiFiSiteToSiteQueueStatus?, error: Error?) {
+    // Process completion event
+}
+```
+
+For a more complete example, see the included DemoSwift application.
+
+## Demo Apps and Framework Test Plan
 
 The functionality of this framework is verified by two methods:
 * Automated testing via XCode unit tests in the s2sTests target
-* Manual testing via included demo app
+* Manual testing via included demo apps
 
-In addition to verifying functionality, both serve as good examples of 
+In addition to verifying functionality, these serve as good examples of 
 how to use the framework API.
 
 To run the tests, select 's2sTests' as the active scheme in XCode, switch to the Test Navigator in the left panel, and click the play icon next to a test or test suite to run the tests.
 
-To run the demo app, select 'Demo' as the active scheme in XCode and click the Build and Play scheme button.
+To run one of the demo apps, select 'DemoSwift' or 'Demo' as the active scheme in XCode and click the Build and Play scheme button.
 
 ## Security
 
@@ -89,15 +186,27 @@ The S2S Framework can use TLS when communicating to a NiFI server, provided the 
 configured for secure communication.
 
 If a NiFi server is using a certificate signed by a [trusted root Certificate Authority](https://support.apple.com/en-us/HT204132), 
-all that is required is to configure the stie-to-site client to secure = true. HTTPS will be used as the 
+all that is required is to configure the site-to-site client with the option `secure=true`. HTTPS will be used as the 
 transport protocol.
 
-If the NiFi server is using a self-signed certificate, your app using the S2S framework 
-must be made aware of the CA. See Apple's documentation for doing this: [https://support.apple.com/en-ca/HT204460].
+If the NiFi server is using a self-signed certificate, or your app needs to perform nonstandard TLS chain validation for some other reason, there is more you must do to make the system trust the CA. The s2s framework uses Apple's NSURL family of APIs internally (i.e., NSURLSession), therefore, in order to provide custom TLS chain validation your app must implement a URLSessionDelegate that overrides the function [URLSession:didReceiveChallenge:completionHandler:](https://developer.apple.com/documentation/foundation/nsurlsessiondelegate/1409308-urlsession). Within your authentication handler delegate method, you should check to see if the challenge protection space has an authentication type of NSURLAuthenticationMethodServerTrust, and if so, obtain the serverTrust information from that protection space. 
 
-Client authentication to the NiFi server is currently supported via username and password credentials.
+An example of this is provided in DemoSwift's [AppNetworking.swift](DemoSwift/AppNetworking.swift) file.
 
-## TODOs and Planned Features
-* Local flow file buffering with persistence
-* Socket implementation
-* Two-way SSL with client certificate
+For more information, see "Performing Custom TLS Chain Validation" in [Apple's URL Session Programming Guide](https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/URLLoadingSystem/Articles/AuthenticationChallenges.html) for more information. You might also find these resources informative:
+
+* [Apple Technical Note TN2232: HTTPS Server Trust Evaluation](https://developer.apple.com/library/content/technotes/tn2232/_index.html)
+* [iOS Networking Topics > Overriding TLS Chain Validation Correctly](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/NetworkingTopics/Articles/OverridingSSLChainValidationCorrectly.html)
+
+Client authentication to the NiFi server is currently supported via username and password credentials, which can be specified in the site-to-site client configuration.
+
+## FAQ and Troubleshooting
+
+*Q: I cannot successfully send data over a secure connection. In my application logs I see, "ERROR  An SSL error has occurred and a secure connection to the server cannot be made."*
+
+A: TLS validation is failing, e.g., it could be that TLS chain validation of the server's certificate is failing. See the Security section above for how to configure your app to communicate over TLS.
+
+*Q: I cannot successfully send data over a secure connection. In my application logs I see, "kCFStreamErrorDomainSSL"*
+
+A: You are implementing custom TLS chain validation, but have not configured your app to allow that. You must add "Allow Arbitrary Loads":YES to "App Transport Security Settings" dict in Info.plist. See Demo or DemoSwift's [Info.plist](DemoSwift/Info.plist) file for an example.
+

@@ -18,7 +18,7 @@
 #import <Foundation/Foundation.h>
 #import "fmdb/FMDB.h"
 #import "NiFiError.h"
-#import "NiFiSiteToSiteServicePrivate.h"
+#import "NiFiSiteToSiteService.h"
 #import "NiFiSiteToSiteDatabasePrivate.h"
 
 // Reasonably sized batches for bulk DB operations
@@ -142,7 +142,21 @@ static const NSUInteger DATABASE_BATCH_SIZE = 2000L;
             userInfo:nil];
 }
 
--(NSInteger)countQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error {
+-(NSUInteger)countQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error {
+    @throw [NSException
+            exceptionWithName:NSInternalInconsistencyException
+            reason:[NSString stringWithFormat:@"You must override %@ in a subclass", NSStringFromSelector(_cmd)]
+            userInfo:nil];
+}
+
+-(NSUInteger)sumSizeQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error {
+    @throw [NSException
+            exceptionWithName:NSInternalInconsistencyException
+            reason:[NSString stringWithFormat:@"You must override %@ in a subclass", NSStringFromSelector(_cmd)]
+            userInfo:nil];
+}
+
+-(NSUInteger)averageSizeQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error {
     @throw [NSException
             exceptionWithName:NSInternalInconsistencyException
             reason:[NSString stringWithFormat:@"You must override %@ in a subclass", NSStringFromSelector(_cmd)]
@@ -483,7 +497,7 @@ static NSString * const NIFI_SITETOSITE_DB_FILE_LOCATION = @"nifi_sitetosite.db"
 
 
 
--(NSInteger)countQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error {
+-(NSUInteger)countQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error {
     
     __block BOOL success;
     __block NSInteger rowCount;
@@ -505,6 +519,54 @@ static NSString * const NIFI_SITETOSITE_DB_FILE_LOCATION = @"nifi_sitetosite.db"
     }
     
     return rowCount;
+}
+
+-(NSUInteger)sumSizeQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error {
+    
+    __block BOOL success;
+    __block NSInteger size;
+    
+    [_fmdbQueue inDatabase:^(FMDatabase * _Nonnull db) {
+        FMResultSet *resultSet = [db executeQuery:@"SELECT sum(estimated_size) as total_size FROM site_to_site_queued_packet"];
+        success = (resultSet != nil);
+        
+        if (success && [resultSet next]) {
+            size = [resultSet longForColumn:@"total_size"];
+        }
+        [resultSet close];
+    }];
+    
+    if (!success && error) {
+        *error = [NSError errorWithDomain:NiFiErrorDomain
+                                     code:NiFiErrorSiteToSiteDatabaseReadFailed
+                                 userInfo:nil];
+    }
+    
+    return size;
+}
+
+-(NSUInteger)averageSizeQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error {
+    
+    __block BOOL success;
+    __block NSInteger size;
+    
+    [_fmdbQueue inDatabase:^(FMDatabase * _Nonnull db) {
+        FMResultSet *resultSet = [db executeQuery:@"SELECT avg(estimated_size) as average_size FROM site_to_site_queued_packet"];
+        success = (resultSet != nil);
+        
+        if (success && [resultSet next]) {
+            size = [resultSet longForColumn:@"average_size"];
+        }
+        [resultSet close];
+    }];
+    
+    if (!success && error) {
+        *error = [NSError errorWithDomain:NiFiErrorDomain
+                                     code:NiFiErrorSiteToSiteDatabaseReadFailed
+                                 userInfo:nil];
+    }
+    
+    return size;
 }
 
 /* Delete any packets where expiresAtMillisSinceReferenceDate > millisSinceReferenceDate */

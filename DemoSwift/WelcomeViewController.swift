@@ -15,27 +15,20 @@
  * See the associated NOTICE file for additional information regarding copyright ownership.
  */
 
-#import <Foundation/Foundation.h>
-#import <XCTest/XCTest.h>
-#import "NiFiSiteToSiteServicePrivate.h"
+import UIKit
 
-@interface NiFiSiteToSiteServiceTests : XCTestCase
-@end
+class WelcomeViewController: UIViewController {
 
-@implementation NiFiSiteToSiteServiceTests
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Do any additional setup after loading the view, typically from a nib.
+    }
 
-- (void)setUp {
-    [super setUp];
-    // Put setup code here.
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+
+
 }
 
-- (void)tearDown {
-    // Put teardown code here.
-    [super tearDown];
-}
-
-- (void)testOne {
-    
-}
-
-@end

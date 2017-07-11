@@ -15,7 +15,7 @@
  * See the associated NOTICE file for additional information regarding copyright ownership.
  */
 
-// # define RUN_INTEGRATION_TESTS
+// # define RUN_INTEGRATION_TESTS // These are off by default as they require running an external NiFi server
 # ifdef RUN_INTEGRATION_TESTS
 
 #import <XCTest/XCTest.h>
@@ -69,7 +69,7 @@
     [transaction sendData:dataPacket3];
     XCTAssertEqual(DATA_EXCHANGED, [transaction transactionState]);
     
-    NiFiTransactionResult *transactionResult = [transaction confirmAndComplete];
+    NiFiTransactionResult *transactionResult = [transaction confirmAndCompleteOrError:nil];
     XCTAssertEqual(TRANSACTION_COMPLETED, [transaction transactionState]);
     XCTAssertNotNil(transactionResult);
     XCTAssertEqual(3, transactionResult.dataPacketsTransferred);
@@ -112,7 +112,7 @@
     [transaction sendData:dataPacket3];
     XCTAssertEqual(DATA_EXCHANGED, [transaction transactionState]);
     
-    NiFiTransactionResult *transactionResult = [transaction confirmAndComplete];
+    NiFiTransactionResult *transactionResult = [transaction confirmAndCompleteOrError:nil];
     XCTAssertEqual(TRANSACTION_COMPLETED, [transaction transactionState]);
     XCTAssertNotNil(transactionResult);
     XCTAssertEqual(3, transactionResult.dataPacketsTransferred);

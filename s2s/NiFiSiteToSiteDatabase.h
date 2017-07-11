@@ -70,7 +70,11 @@ typedef void (^NiFiQueuedDataPacketEntityEnumeratorBlock)(NiFiQueuedDataPacketEn
 
 -(void)markPacketsForRetryWithTransactionId:(nonnull NSString *)transactionId;
 
--(NSInteger)countQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error;
+-(NSUInteger)countQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error;
+
+-(NSUInteger)sumSizeQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error;
+
+-(NSUInteger)averageSizeQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error;
 
 /* Delete any packets where expiresAtMillisSinceReferenceDate > millisSinceReferenceDate */
 -(void)ageOffExpiredQueuedDataPacketsOrError:(NSError *_Nullable *_Nullable)error;

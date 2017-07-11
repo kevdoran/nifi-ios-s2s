@@ -95,6 +95,8 @@ typedef enum {
 @property (nonatomic, readwrite) bool secure;  // defaults to false
 @property (nonatomic, retain, readwrite, nullable) NSString *username;  // client credentials for two-way auth; ignored if secure is false
 @property (nonatomic, retain, readwrite, nullable) NSString *password;  // client credentials for two-way auth; ignored if secure is false
+@property (nonatomic, retain, readwrite, nullable) NSURLSessionConfiguration *urlSessionConfiguration;  // optional URLSessionConfiguration to use
+@property (nonatomic, retain, readwrite, nullable) NSObject <NSURLSessionDelegate> *urlSessionDelegate;  // optional URLSessionDelegate to use
 - (nonnull instancetype)init;
 @end
 

@@ -10,6 +10,13 @@
 		C0435F861EEF0ADD00C6103D /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = C0435F851EEF0ADD00C6103D /* libz.tbd */; };
 		C06ABFF81F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h in Headers */ = {isa = PBXBuildFile; fileRef = C06ABFF71F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h */; };
 		C06ABFFA1F0ADEE700D1F60D /* NiFiSiteToSiteDatabasePrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = C06ABFF91F0ADEE700D1F60D /* NiFiSiteToSiteDatabasePrivate.h */; };
+		C06AC01C1F0D67F500D1F60D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06AC01B1F0D67F500D1F60D /* AppDelegate.swift */; };
+		C06AC01E1F0D67F500D1F60D /* WelcomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06AC01D1F0D67F500D1F60D /* WelcomeViewController.swift */; };
+		C06AC0201F0D67F500D1F60D /* QueuedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06AC01F1F0D67F500D1F60D /* QueuedViewController.swift */; };
+		C06AC0231F0D67F500D1F60D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C06AC0211F0D67F500D1F60D /* Main.storyboard */; };
+		C06AC0251F0D67F500D1F60D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C06AC0241F0D67F500D1F60D /* Assets.xcassets */; };
+		C06AC0281F0D67F500D1F60D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C06AC0261F0D67F500D1F60D /* LaunchScreen.storyboard */; };
+		C06AC0301F0D906A00D1F60D /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06AC02F1F0D906A00D1F60D /* SettingsViewController.swift */; };
 		C074D50D1EE1C7AD00FF6787 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C074D50C1EE1C7AD00FF6787 /* main.m */; };
 		C074D5101EE1C7AD00FF6787 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = C074D50F1EE1C7AD00FF6787 /* AppDelegate.m */; };
 		C074D5131EE1C7AD00FF6787 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C074D5121EE1C7AD00FF6787 /* ViewController.m */; };
@@ -25,8 +32,6 @@
 		C074D53D1EE1E3D900FF6787 /* NiFiSiteToSiteClientPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = C074D53C1EE1E3D900FF6787 /* NiFiSiteToSiteClientPrivate.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		C074D53F1EE1E61200FF6787 /* NiFiHttpSiteToSiteClient.m in Sources */ = {isa = PBXBuildFile; fileRef = C074D53E1EE1E61200FF6787 /* NiFiHttpSiteToSiteClient.m */; };
 		C074D5411EE1EA7A00FF6787 /* NiFiHttpRestApiClient.m in Sources */ = {isa = PBXBuildFile; fileRef = C074D5401EE1EA7A00FF6787 /* NiFiHttpRestApiClient.m */; };
-		C07B8C561F043DD200069647 /* NiFiSiteToSiteServicePrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = C07B8C551F043DD200069647 /* NiFiSiteToSiteServicePrivate.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		C07B8C581F04478300069647 /* NiFiSiteToSiteServiceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C07B8C571F04478300069647 /* NiFiSiteToSiteServiceTests.m */; };
 		C07B8C5A1F04488800069647 /* NiFiSiteToSiteDatabaseTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C07B8C591F04488800069647 /* NiFiSiteToSiteDatabaseTests.m */; };
 		C07B8C5C1F056E6800069647 /* FMDB.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C07B8C5B1F056E6800069647 /* FMDB.framework */; };
 		C07B8C6A1F05741700069647 /* NiFiSiteToSiteDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = C07B8C691F05741700069647 /* NiFiSiteToSiteDatabase.m */; };
@@ -37,6 +42,8 @@
 		C0D360A41EFC1887008B1BB5 /* NiFiHttpTransactionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C0D360A31EFC1887008B1BB5 /* NiFiHttpTransactionTests.m */; };
 		C0D360A81F01B675008B1BB5 /* NiFiSiteToSiteService.m in Sources */ = {isa = PBXBuildFile; fileRef = C0D360A71F01B675008B1BB5 /* NiFiSiteToSiteService.m */; };
 		C0D360AA1F01B6A3008B1BB5 /* NiFiSiteToSiteService.h in Headers */ = {isa = PBXBuildFile; fileRef = C0D360A91F01B6A3008B1BB5 /* NiFiSiteToSiteService.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		C0D3B7421F0E790B00920C9B /* s2s.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C074D5271EE1C82400FF6787 /* s2s.framework */; };
+		C0D3B7441F0ED97C00920C9B /* AppNetworking.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3B7431F0ED97C00920C9B /* AppNetworking.swift */; };
 		C0DD292F1EE723FF00AD1B7A /* s2sTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C0DD292E1EE723FF00AD1B7A /* s2sTests.m */; };
 		C0DD29311EE723FF00AD1B7A /* s2s.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C074D5271EE1C82400FF6787 /* s2s.framework */; };
 		C0DD29381EEB9AD900AD1B7A /* NiFiDataPacket.m in Sources */ = {isa = PBXBuildFile; fileRef = C0DD29371EEB9AD900AD1B7A /* NiFiDataPacket.m */; };
@@ -87,6 +94,15 @@
 		C0435F851EEF0ADD00C6103D /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		C06ABFF71F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteDatabase.h; sourceTree = "<group>"; };
 		C06ABFF91F0ADEE700D1F60D /* NiFiSiteToSiteDatabasePrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteDatabasePrivate.h; sourceTree = "<group>"; };
+		C06AC0191F0D67F500D1F60D /* DemoSwift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DemoSwift.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C06AC01B1F0D67F500D1F60D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		C06AC01D1F0D67F500D1F60D /* WelcomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewController.swift; sourceTree = "<group>"; };
+		C06AC01F1F0D67F500D1F60D /* QueuedViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueuedViewController.swift; sourceTree = "<group>"; };
+		C06AC0221F0D67F500D1F60D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		C06AC0241F0D67F500D1F60D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C06AC0271F0D67F500D1F60D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		C06AC0291F0D67F500D1F60D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C06AC02F1F0D906A00D1F60D /* SettingsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		C074D5081EE1C7AD00FF6787 /* Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Demo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C074D50C1EE1C7AD00FF6787 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		C074D50E1EE1C7AD00FF6787 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -106,8 +122,6 @@
 		C074D53C1EE1E3D900FF6787 /* NiFiSiteToSiteClientPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteClientPrivate.h; sourceTree = "<group>"; };
 		C074D53E1EE1E61200FF6787 /* NiFiHttpSiteToSiteClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiHttpSiteToSiteClient.m; sourceTree = "<group>"; };
 		C074D5401EE1EA7A00FF6787 /* NiFiHttpRestApiClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiHttpRestApiClient.m; sourceTree = "<group>"; };
-		C07B8C551F043DD200069647 /* NiFiSiteToSiteServicePrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteServicePrivate.h; sourceTree = "<group>"; };
-		C07B8C571F04478300069647 /* NiFiSiteToSiteServiceTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteServiceTests.m; sourceTree = "<group>"; };
 		C07B8C591F04488800069647 /* NiFiSiteToSiteDatabaseTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteDatabaseTests.m; sourceTree = "<group>"; };
 		C07B8C5B1F056E6800069647 /* FMDB.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FMDB.framework; path = Carthage/Build/iOS/FMDB.framework; sourceTree = "<group>"; };
 		C07B8C691F05741700069647 /* NiFiSiteToSiteDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteDatabase.m; sourceTree = "<group>"; };
@@ -118,6 +132,7 @@
 		C0D360A31EFC1887008B1BB5 /* NiFiHttpTransactionTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiHttpTransactionTests.m; sourceTree = "<group>"; };
 		C0D360A71F01B675008B1BB5 /* NiFiSiteToSiteService.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteService.m; sourceTree = "<group>"; };
 		C0D360A91F01B6A3008B1BB5 /* NiFiSiteToSiteService.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteService.h; sourceTree = "<group>"; };
+		C0D3B7431F0ED97C00920C9B /* AppNetworking.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppNetworking.swift; sourceTree = "<group>"; };
 		C0DD292C1EE723FF00AD1B7A /* s2sTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = s2sTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0DD292E1EE723FF00AD1B7A /* s2sTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = s2sTests.m; sourceTree = "<group>"; };
 		C0DD29301EE723FF00AD1B7A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -126,6 +141,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		C06AC0161F0D67F500D1F60D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C0D3B7421F0E790B00920C9B /* s2s.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C074D5051EE1C7AD00FF6787 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -163,10 +186,27 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		C06AC01A1F0D67F500D1F60D /* DemoSwift */ = {
+			isa = PBXGroup;
+			children = (
+				C06AC01B1F0D67F500D1F60D /* AppDelegate.swift */,
+				C0D3B7431F0ED97C00920C9B /* AppNetworking.swift */,
+				C06AC01D1F0D67F500D1F60D /* WelcomeViewController.swift */,
+				C06AC01F1F0D67F500D1F60D /* QueuedViewController.swift */,
+				C06AC02F1F0D906A00D1F60D /* SettingsViewController.swift */,
+				C06AC0211F0D67F500D1F60D /* Main.storyboard */,
+				C06AC0241F0D67F500D1F60D /* Assets.xcassets */,
+				C06AC0261F0D67F500D1F60D /* LaunchScreen.storyboard */,
+				C06AC0291F0D67F500D1F60D /* Info.plist */,
+			);
+			path = DemoSwift;
+			sourceTree = "<group>";
+		};
 		C074D4FF1EE1C7AD00FF6787 = {
 			isa = PBXGroup;
 			children = (
 				C074D50A1EE1C7AD00FF6787 /* Demo */,
+				C06AC01A1F0D67F500D1F60D /* DemoSwift */,
 				C074D5281EE1C82400FF6787 /* s2s */,
 				C0DD292D1EE723FF00AD1B7A /* s2sTests */,
 				C074D5091EE1C7AD00FF6787 /* Products */,
@@ -180,6 +220,7 @@
 				C074D5081EE1C7AD00FF6787 /* Demo.app */,
 				C074D5271EE1C82400FF6787 /* s2s.framework */,
 				C0DD292C1EE723FF00AD1B7A /* s2sTests.xctest */,
+				C06AC0191F0D67F500D1F60D /* DemoSwift.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -220,7 +261,6 @@
 				C06ABFF71F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h */,
 				C06ABFF91F0ADEE700D1F60D /* NiFiSiteToSiteDatabasePrivate.h */,
 				C0D360A91F01B6A3008B1BB5 /* NiFiSiteToSiteService.h */,
-				C07B8C551F043DD200069647 /* NiFiSiteToSiteServicePrivate.h */,
 				C0DD29371EEB9AD900AD1B7A /* NiFiDataPacket.m */,
 				C0D3609F1EF97BA1008B1BB5 /* NiFiError.m */,
 				C074D5401EE1EA7A00FF6787 /* NiFiHttpRestApiClient.m */,
@@ -241,7 +281,6 @@
 				C0D3608A1EF2F9C0008B1BB5 /* NiFiHttpRestApiClientTests.m */,
 				C0D360A31EFC1887008B1BB5 /* NiFiHttpTransactionTests.m */,
 				C07B8C591F04488800069647 /* NiFiSiteToSiteDatabaseTests.m */,
-				C07B8C571F04478300069647 /* NiFiSiteToSiteServiceTests.m */,
 				C0DD292E1EE723FF00AD1B7A /* s2sTests.m */,
 			);
 			path = s2sTests;
@@ -258,7 +297,6 @@
 				C0D360AA1F01B6A3008B1BB5 /* NiFiSiteToSiteService.h in Headers */,
 				C0D3609E1EF97854008B1BB5 /* NiFiError.h in Headers */,
 				C074D5351EE1C94D00FF6787 /* NiFiSiteToSiteClient.h in Headers */,
-				C07B8C561F043DD200069647 /* NiFiSiteToSiteServicePrivate.h in Headers */,
 				C074D52B1EE1C82400FF6787 /* s2s.h in Headers */,
 				C06ABFF81F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h in Headers */,
 				C074D53D1EE1E3D900FF6787 /* NiFiSiteToSiteClientPrivate.h in Headers */,
@@ -270,6 +308,23 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		C06AC0181F0D67F500D1F60D /* DemoSwift */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C06AC02A1F0D67F500D1F60D /* Build configuration list for PBXNativeTarget "DemoSwift" */;
+			buildPhases = (
+				C06AC0151F0D67F500D1F60D /* Sources */,
+				C06AC0161F0D67F500D1F60D /* Frameworks */,
+				C06AC0171F0D67F500D1F60D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DemoSwift;
+			productName = DemoSwift;
+			productReference = C06AC0191F0D67F500D1F60D /* DemoSwift.app */;
+			productType = "com.apple.product-type.application";
+		};
 		C074D5071EE1C7AD00FF6787 /* Demo */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C074D51F1EE1C7AD00FF6787 /* Build configuration list for PBXNativeTarget "Demo" */;
@@ -337,6 +392,10 @@
 				LastUpgradeCheck = 0830;
 				ORGANIZATIONNAME = "Apache Software Foundation";
 				TargetAttributes = {
+					C06AC0181F0D67F500D1F60D = {
+						CreatedOnToolsVersion = 8.3.3;
+						ProvisioningStyle = Automatic;
+					};
 					C074D5071EE1C7AD00FF6787 = {
 						CreatedOnToolsVersion = 8.3.2;
 						ProvisioningStyle = Automatic;
@@ -367,11 +426,22 @@
 				C074D5071EE1C7AD00FF6787 /* Demo */,
 				C074D5261EE1C82400FF6787 /* s2s */,
 				C0DD292B1EE723FF00AD1B7A /* s2sTests */,
+				C06AC0181F0D67F500D1F60D /* DemoSwift */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		C06AC0171F0D67F500D1F60D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C06AC0281F0D67F500D1F60D /* LaunchScreen.storyboard in Resources */,
+				C06AC0251F0D67F500D1F60D /* Assets.xcassets in Resources */,
+				C06AC0231F0D67F500D1F60D /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C074D5061EE1C7AD00FF6787 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -417,6 +487,18 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		C06AC0151F0D67F500D1F60D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C06AC0201F0D67F500D1F60D /* QueuedViewController.swift in Sources */,
+				C06AC01C1F0D67F500D1F60D /* AppDelegate.swift in Sources */,
+				C0D3B7441F0ED97C00920C9B /* AppNetworking.swift in Sources */,
+				C06AC01E1F0D67F500D1F60D /* WelcomeViewController.swift in Sources */,
+				C06AC0301F0D906A00D1F60D /* SettingsViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C074D5041EE1C7AD00FF6787 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -446,7 +528,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				C0D360A41EFC1887008B1BB5 /* NiFiHttpTransactionTests.m in Sources */,
-				C07B8C581F04478300069647 /* NiFiSiteToSiteServiceTests.m in Sources */,
 				C0DD292F1EE723FF00AD1B7A /* s2sTests.m in Sources */,
 				C0D360A21EFBFE91008B1BB5 /* NiFiDataPacketTests.m in Sources */,
 				C0D3608B1EF2F9C0008B1BB5 /* NiFiHttpRestApiClientTests.m in Sources */,
@@ -470,6 +551,22 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		C06AC0211F0D67F500D1F60D /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C06AC0221F0D67F500D1F60D /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		C06AC0261F0D67F500D1F60D /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C06AC0271F0D67F500D1F60D /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
 		C074D5141EE1C7AD00FF6787 /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -489,6 +586,34 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		C06AC02B1F0D67F500D1F60D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				INFOPLIST_FILE = DemoSwift/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = org.apache.nifi.DemoSwift;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
+			};
+			name = Debug;
+		};
+		C06AC02C1F0D67F500D1F60D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				INFOPLIST_FILE = DemoSwift/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = org.apache.nifi.DemoSwift;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 3.0;
+			};
+			name = Release;
+		};
 		C074D51D1EE1C7AD00FF6787 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -692,6 +817,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		C06AC02A1F0D67F500D1F60D /* Build configuration list for PBXNativeTarget "DemoSwift" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C06AC02B1F0D67F500D1F60D /* Debug */,
+				C06AC02C1F0D67F500D1F60D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		C074D5031EE1C7AD00FF6787 /* Build configuration list for PBXProject "nifisitetosite" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

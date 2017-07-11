@@ -18,7 +18,6 @@
 #import <Foundation/Foundation.h>
 #import "NiFiHttpSiteToSiteClient.h"
 
-static const int SECONDS_TO_NANOS = 1000000000;
 NSString *const HTTP_SITE_TO_SITE_PROTOCOL_VERSION = @"5";
 
 typedef void(^TtlExtenderBlock)(NSString * transactionId);
@@ -137,7 +136,7 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
     // schedule another keep alive if needed
     if (_shouldKeepAlive) {
         NSLog(@"Scheduling background task to extend transaction TTL");
-        dispatch_time_t nextKeepAlive = dispatch_time(DISPATCH_TIME_NOW, (ttl / 2) * SECONDS_TO_NANOS);
+        dispatch_time_t nextKeepAlive = dispatch_time(DISPATCH_TIME_NOW, (ttl / 2) * NSEC_PER_SEC);
         dispatch_after(nextKeepAlive, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(void){
             if (self &&
                     [self shouldKeepAlive] &&
@@ -175,7 +174,16 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
 }
 
 - (nullable NSObject <NiFiTransaction> *)createTransaction {
-    return [self createTransactionWithURLSession:[NSURLSession sharedSession]];
+    NSURLSession *urlSession;
+    if (self.config.urlSessionConfiguration || self.config.urlSessionDelegate) {
+        urlSession = [NSURLSession sessionWithConfiguration:self.config.urlSessionConfiguration ?: [NSURLSessionConfiguration defaultSessionConfiguration]
+                                                   delegate:self.config.urlSessionDelegate
+                                              delegateQueue:nil];
+    } else {
+        urlSession = [NSURLSession sharedSession];
+    }
+    
+    return [self createTransactionWithURLSession:urlSession];
 }
 
 - (nullable NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *)urlSession {

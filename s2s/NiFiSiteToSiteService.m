@@ -16,7 +16,7 @@
  */
 
 #import <Foundation/Foundation.h>
-#import "NiFiSiteToSiteServicePrivate.h"
+#import "NiFiSiteToSiteService.h"
 #import "NiFiSiteToSiteClientPrivate.h"
 #import "NiFiSiteToSiteDatabase.h"
 #import "NiFiError.h"
@@ -57,6 +57,7 @@
 
 @end
 
+
 /********** QueuedSiteToSiteConfig Implementation **********/
 
 static const int QUEUED_S2S_CONFIG_DEFAULT_MAX_PACKET_COUNT = 10000L;
@@ -79,6 +80,19 @@ static const int QUEUED_S2S_CONFIG_DEFAULT_BATCH_SIZE = 1024L * 1024L; // 1 MB
 }
 
 @end
+
+
+/********** SiteToSiteQueueStatus Implementation **********/
+
+@interface NiFiSiteToSiteQueueStatus()
+@property (nonatomic, readwrite) NSUInteger queuedPacketCount;
+@property (nonatomic, readwrite) NSUInteger queuedPacketSizeBytes;
+@property (nonatomic, readwrite) BOOL isFull;
+@end
+
+@implementation NiFiSiteToSiteQueueStatus : NSObject
+@end
+
 
 /********** QueuedSiteToSiteClient Implementation **********/
 
@@ -112,6 +126,18 @@ static const int QUEUED_S2S_CONFIG_DEFAULT_BATCH_SIZE = 1024L * 1024L; // 1 MB
     return self;
 }
 
+- (NSURLSession *)urlSession {
+    if (!_config) {
+        return nil;
+    }
+    NSURLSessionConfiguration *config = _config.urlSessionConfiguration ?: [NSURLSessionConfiguration defaultSessionConfiguration];
+    if (_config.urlSessionDelegate) {
+        return [NSURLSession sessionWithConfiguration:config delegate:_config.urlSessionDelegate delegateQueue:nil];
+    } else {
+        return [NSURLSession sessionWithConfiguration:config];
+    }
+}
+
 - (void) enqueueDataPacket:(nonnull NiFiDataPacket *)dataPacket error:(NSError *_Nullable *_Nullable)error {
     [self enqueueDataPackets:[NSArray arrayWithObjects:dataPacket, nil] error:error];
 }
@@ -134,19 +160,28 @@ static const int QUEUED_S2S_CONFIG_DEFAULT_BATCH_SIZE = 1024L * 1024L; // 1 MB
 
 - (void) processOrError:(NSError *_Nullable *_Nullable)error {
     
-    NiFiSiteToSiteClient *client = [NiFiSiteToSiteClient clientWithConfig:_config];
-    id transaction = [client createTransaction];
-    NSString *transactionId = [transaction transactionId];
-    if (!transaction && transactionId) {
-        if (error) {
-            *error = [NSError errorWithDomain:NiFiErrorDomain
-                                           code:NiFiErrorSiteToSiteClientCouldNotCreateTransaction
-                                       userInfo:nil];
-        }
+    // Check for work to do (non-zero queued packet count)
+    NSError *dbError;
+    NSUInteger queuedPacketCount = [_database countQueuedDataPacketsOrError:&dbError];
+    if (!dbError && queuedPacketCount == 0) {
         return;
     }
     
-    NSError *dbError;
+    // create a site-to-site client and initiate a trasaction with the nifi peer
+    // we need the server-generated transaction id to continue with the db operation
+    NiFiSiteToSiteClient *client = [NiFiSiteToSiteClient clientWithConfig:_config];
+    id transaction = [client createTransactionWithURLSession:[self urlSession]];
+    if (!transaction || ![transaction transactionId]) {
+        if (error) {
+            *error = [NSError errorWithDomain:NiFiErrorDomain
+                                         code:NiFiErrorSiteToSiteClientCouldNotCreateTransaction
+                                     userInfo:nil];
+        }
+        return;
+    }
+    NSString *transactionId = [transaction transactionId];
+    
+    // use the server-generated transaction id to mark packets for transmission
     [_database createBatchWithTransactionId:transactionId
                                  countLimit:[_config.preferredBatchCount unsignedIntegerValue]
                               byteSizeLimit:[_config.preferredBatchSize unsignedIntegerValue]
@@ -160,13 +195,20 @@ static const int QUEUED_S2S_CONFIG_DEFAULT_BATCH_SIZE = 1024L * 1024L; // 1 MB
         return;
     }
     
+    // now send the data to the nifi peer in a transaction
     NSError *transactionError;
     NSArray<NiFiQueuedDataPacketEntity *> *entitiesToSend = [_database getPacketsWithTransactionId:transactionId];
-    for (NiFiQueuedDataPacketEntity *entity in entitiesToSend) {
-        [transaction sendData:[entity dataPacket]];
+    if ([entitiesToSend count] > 0) {
+        for (NiFiQueuedDataPacketEntity *entity in entitiesToSend) {
+            [transaction sendData:[entity dataPacket]];
+        }
         [transaction confirmAndCompleteOrError:&transactionError];
+    } else {
+        // nothing to do, perhaps another task/thread cleared the queue
+        [transaction cancel];
     }
     
+    // if the transaction completed, remove the queued packets from the DB, otherwise, mark them for retry. 
     if (transactionError) {
         NSLog(@"Encountered error with domain='%@' code='%ld", [*error domain], (long)[*error code]);
         if (error) {
@@ -194,6 +236,47 @@ static const int QUEUED_S2S_CONFIG_DEFAULT_BATCH_SIZE = 1024L * 1024L; // 1 MB
     [_database truncateQueuedDataPacketsMaxBytes:maxBytes error:error];
 }
 
+- (nullable NiFiSiteToSiteQueueStatus *) queueStatusOrError:(NSError *_Nullable *_Nullable)error {
+    NiFiSiteToSiteQueueStatus *status = [[NiFiSiteToSiteQueueStatus alloc] init];
+    NSError *dbError = nil;
+    
+    status.queuedPacketCount = [_database countQueuedDataPacketsOrError:&dbError];
+    if (dbError) {
+        if (error) {
+            *error = dbError;
+        }
+        return nil;
+    }
+    
+    status.queuedPacketSizeBytes = [_database sumSizeQueuedDataPacketsOrError:&dbError];
+    if (dbError) {
+        if (error) {
+            *error = dbError;
+        }
+        return nil;
+    }
+    
+    status.isFull = FALSE;
+    if (self.config.maxQueuedPacketCount && [self.config.maxQueuedPacketCount integerValue]) {
+        status.isFull = status.queuedPacketCount >= [self.config.maxQueuedPacketCount integerValue] ? YES : NO;
+    }
+    if(!status.isFull) {
+        if (self.config.maxQueuedPacketSize && [self.config.maxQueuedPacketSize integerValue]) {
+            NSUInteger averageSize = [_database averageSizeQueuedDataPacketsOrError:&dbError];
+            if (!dbError) {
+                status.isFull =
+                    status.queuedPacketSizeBytes >= [self.config.maxQueuedPacketCount integerValue] - averageSize ?
+                    YES : NO;
+            } else {
+                if (error) {
+                    *error = dbError;
+                }
+            }
+        }
+    }
+    return status;
+}
+
 @end
 
 
@@ -201,20 +284,17 @@ static const int QUEUED_S2S_CONFIG_DEFAULT_BATCH_SIZE = 1024L * 1024L; // 1 MB
 
 @implementation NiFiSiteToSiteService
 
-// TODO, create background-able NSURLSession, as described in "Downloading Content in the Background" here:
-// https://developer.apple.com/library/content/documentation/iPhone/Conceptual/iPhoneOSProgrammingGuide/BackgroundExecution/BackgroundExecution.html
-
 + (void)sendDataPacket:(nonnull NiFiDataPacket *)packet
-siteToSiteClientConfig:(nonnull NiFiSiteToSiteClientConfig *)config
+                config:(nonnull NiFiSiteToSiteClientConfig *)config
      completionHandler:(void (^_Nullable)(NiFiTransactionResult *_Nullable result, NSError *_Nullable error))completionHandler {
     NSArray *packets = [NSArray arrayWithObjects:packet, nil];
     [[self class] sendDataPackets:packets
-           siteToSiteClientConfig:config
+                           config:config
                 completionHandler:completionHandler];
 }
 
 + (void)sendDataPackets:(nonnull NSArray *)packets
- siteToSiteClientConfig:(nonnull NiFiSiteToSiteClientConfig *)config
+                 config:(nonnull NiFiSiteToSiteClientConfig *)config
       completionHandler:(void (^_Nullable)(NiFiTransactionResult *_Nullable result, NSError *_Nullable error))completionHandler {
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -239,47 +319,63 @@ siteToSiteClientConfig:(nonnull NiFiSiteToSiteClientConfig *)config
 }
 
 + (void)enqueueDataPacket:(nonnull NiFiDataPacket *)packet
-   siteToSiteClientConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
-        completionHandler:(void (^_Nullable)(NSError *_Nullable error))completionHandler {
+                   config:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
+        completionHandler:(void (^_Nullable)(NiFiSiteToSiteQueueStatus *_Nullable status,
+                                             NSError *_Nullable error))completionHandler {
     
     NSArray *packets = [NSArray arrayWithObjects:packet, nil];
     
     return [[self class] enqueueDataPackets:packets
-                     siteToSiteClientConfig:config
+                                     config:config
                           completionHandler:completionHandler];
 }
 
 + (void)enqueueDataPackets:(nonnull NSArray *)packets
-    siteToSiteClientConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
-         completionHandler:(void (^_Nullable)(NSError *_Nullable error))completionHandler {
+                    config:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
+         completionHandler:(void (^_Nullable)(NiFiSiteToSiteQueueStatus *_Nullable status,
+                                              NSError *_Nullable error))completionHandler {
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        NiFiSiteToSiteQueueStatus *status = nil;
         NSError *error = nil;
         NiFiQueuedSiteToSiteClient *s2sClient = [NiFiQueuedSiteToSiteClient clientWithConfig:config];
         [s2sClient enqueueDataPackets:packets error:&error];
-        completionHandler(error);
+        if (!error) {
+            [s2sClient cleanupOrError:nil];
+            status = [s2sClient queueStatusOrError:&error];
+        }
+        completionHandler(status, error);
     });
 }
 
-+ (void)processQueuedPackets:(nonnull NSArray *)packets
-      siteToSiteClientConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
-           completionHandler:(void (^_Nullable)(NSError *_Nullable error))completionHandler {
++ (void)processQueuedPacketsWithConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
+                     completionHandler:(void (^_Nullable)(NiFiSiteToSiteQueueStatus *_Nullable status,
+                                                          NSError *_Nullable error))completionHandler {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NiFiSiteToSiteQueueStatus *status = nil;
         NSError *error = nil;
         NiFiQueuedSiteToSiteClient *s2sClient = [NiFiQueuedSiteToSiteClient clientWithConfig:config];
+        [s2sClient cleanupOrError:nil];
         [s2sClient processOrError:&error];
-        completionHandler(error);
+        if (!error) {
+            status = [s2sClient queueStatusOrError:&error];
+        }
+        completionHandler(status, error);
     });
 }
 
-+ (void)cleanupQueuedPackets:(nonnull NSArray *)packets
-      siteToSiteClientConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
-           completionHandler:(void (^_Nullable)(NSError *_Nullable error))completionHandler {
++ (void)cleanupQueuedPacketsWithConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
+           completionHandler:(void (^_Nullable)(NiFiSiteToSiteQueueStatus *_Nullable status,
+                                                NSError *_Nullable error))completionHandler {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^{
+        NiFiSiteToSiteQueueStatus *status = nil;
         NSError *error = nil;
         NiFiQueuedSiteToSiteClient *s2sClient = [NiFiQueuedSiteToSiteClient clientWithConfig:config];
         [s2sClient cleanupOrError:&error];
-        completionHandler(error);
+        if (!error) {
+            status = [s2sClient queueStatusOrError:&error];
+        }
+        completionHandler(status, error);
     });
 }
 

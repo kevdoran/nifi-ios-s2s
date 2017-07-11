@@ -152,8 +152,11 @@
     copy.portId = [_portId copyWithZone:zone];
     copy.transportProtocol = _transportProtocol;
     copy.secure = _secure;
-    copy.username = _username;
-    copy.password = _password;
+    copy.username = [_username copyWithZone:zone];
+    copy.password = [_password copyWithZone:zone];
+    
+    copy.urlSessionConfiguration = [_urlSessionConfiguration copyWithZone:zone];
+    copy.urlSessionDelegate = _urlSessionDelegate; // shallow copy
     
     return copy;
 }

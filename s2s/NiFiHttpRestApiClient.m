@@ -35,8 +35,6 @@ static NSString *const HTTP_HEADER_LOCATION = @"Location";
 static NSString *const HTTP_HEADER_LOCATION_URI_INTENT_NAME = @"x-location-uri-intent";
 static NSString *const HTTP_HEADER_LOCATION_URI_INTENT_VALUE = @"transaction-url";
 
-static const int SECONDS_TO_NANOS = 1000000000;
-
 
 /********** TransactionResource **********/
 
@@ -384,7 +382,7 @@ static const int SECONDS_TO_NANOS = 1000000000;
         dispatch_semaphore_signal(semaphore);
     }];
     [dataTask resume];
-    dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, request.timeoutInterval * SECONDS_TO_NANOS);
+    dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, request.timeoutInterval * NSEC_PER_SEC);
     long didTimeout = dispatch_semaphore_wait(semaphore, timeout);
     
     if(!didTimeout) {

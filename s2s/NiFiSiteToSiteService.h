@@ -60,6 +60,15 @@
 @end
 
 
+@interface NiFiSiteToSiteQueueStatus : NSObject
+
+@property (nonatomic, readonly) NSUInteger queuedPacketCount;
+@property (nonatomic, readonly) NSUInteger queuedPacketSizeBytes;
+@property (nonatomic, readonly) BOOL isFull;
+
+@end
+
+
 @interface NiFiQueuedSiteToSiteClient : NSObject
 
 + (nonnull instancetype)clientWithConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config;
@@ -68,6 +77,7 @@
 - (void) enqueueDataPackets:(nonnull NSArray *)dataPackets error:(NSError *_Nullable *_Nullable)error;
 - (void) processOrError:(NSError *_Nullable *_Nullable)error;
 - (void) cleanupOrError:(NSError *_Nullable *_Nullable)error;
+- (nullable NiFiSiteToSiteQueueStatus *) queueStatusOrError:(NSError *_Nullable *_Nullable)error;
 
 @end
 
@@ -75,28 +85,30 @@
 @interface NiFiSiteToSiteService : NSObject
 
 + (void)sendDataPacket:(nonnull NiFiDataPacket *)packet
-siteToSiteClientConfig:(nonnull NiFiSiteToSiteClientConfig *)config
+                config:(nonnull NiFiSiteToSiteClientConfig *)config
      completionHandler:(void (^_Nullable)(NiFiTransactionResult *_Nullable result, NSError *_Nullable error))completionHandler;
 
 + (void)sendDataPackets:(nonnull NSArray *)packets
- siteToSiteClientConfig:(nonnull NiFiSiteToSiteClientConfig *)config
+                 config:(nonnull NiFiSiteToSiteClientConfig *)config
       completionHandler:(void (^_Nullable)(NiFiTransactionResult *_Nullable result, NSError *_Nullable error))completionHandler;
 
 + (void)enqueueDataPacket:(nonnull NiFiDataPacket *)packet
-   siteToSiteClientConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
-        completionHandler:(void (^_Nullable)(NSError *_Nullable error))completionHandler;
+                   config:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
+        completionHandler:(void (^_Nullable)(NiFiSiteToSiteQueueStatus *_Nullable status,
+                                             NSError *_Nullable error))completionHandler;
 
 + (void)enqueueDataPackets:(nonnull NSArray *)packets
-    siteToSiteClientConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
-         completionHandler:(void (^_Nullable)(NSError *_Nullable error))completionHandler;
+                    config:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
+         completionHandler:(void (^_Nullable)(NiFiSiteToSiteQueueStatus *_Nullable status,
+                                              NSError *_Nullable error))completionHandler;
 
-+ (void)processQueuedPackets:(nonnull NSArray *)packets
-      siteToSiteClientConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
-           completionHandler:(void (^_Nullable)(NSError *_Nullable error))completionHandler;
++ (void)processQueuedPacketsWithConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
+                     completionHandler:(void (^_Nullable)(NiFiSiteToSiteQueueStatus *_Nullable status,
+                                                          NSError *_Nullable error))completionHandler;
 
-+ (void)cleanupQueuedPackets:(nonnull NSArray *)packets
-      siteToSiteClientConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
-           completionHandler:(void (^_Nullable)(NSError *_Nullable error))completionHandler;
++ (void)cleanupQueuedPacketsWithConfig:(nonnull NiFiQueuedSiteToSiteClientConfig *)config
+                     completionHandler:(void (^_Nullable)(NiFiSiteToSiteQueueStatus *_Nullable status,
+                                                          NSError *_Nullable error))completionHandler;
 
 @end
 
