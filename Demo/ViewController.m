@@ -38,10 +38,8 @@
     NiFiSiteToSiteClientConfig * s2sConfig = [[NiFiSiteToSiteClientConfig alloc] init];
     s2sConfig.transportProtocol = HTTP;
     s2sConfig.host = @"localhost";
-    //s2sConfig.port = [NSNumber numberWithInt:8080];
-    //s2sConfig.portId = @"82f79eb6-015c-1000-d191-ee1ef23b1a74";
-    s2sConfig.port = [NSNumber numberWithInt:32768];
-    s2sConfig.portId = @"cb655af6-015c-1000-4b7c-e344b815744d";
+    s2sConfig.port = [NSNumber numberWithInt:8080];
+    s2sConfig.portName = @"From iOS";
     s2sConfig.secure = true;
     s2sConfig.username = @"admin";
     s2sConfig.password = @"admin-password";

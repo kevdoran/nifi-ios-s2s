@@ -45,7 +45,12 @@ class QueuedViewController: UIViewController {
         s2sClientConfig = NiFiQueuedSiteToSiteClientConfig()
         s2sClientConfig.host = UserDefaults.standard.string(forKey: "nifi.s2s.config.host")!
         s2sClientConfig.port = NSNumber(value: UserDefaults.standard.integer(forKey: "nifi.s2s.config.port"))
-        s2sClientConfig.portId = UserDefaults.standard.string(forKey: "nifi.s2s.config.portId")!
+        if let portName = UserDefaults.standard.string(forKey: "nifi.s2s.config.portName") {
+            s2sClientConfig.portName = portName
+        }
+        if let portId = UserDefaults.standard.string(forKey: "nifi.s2s.config.portId") {
+            s2sClientConfig.portId = portId
+        }
         s2sClientConfig.secure = UserDefaults.standard.bool(forKey: "nifi.s2s.config.secure")
         if s2sClientConfig.secure {
             s2sClientConfig.username = UserDefaults.standard.string(forKey: "nifi.s2s.config.secure.username")

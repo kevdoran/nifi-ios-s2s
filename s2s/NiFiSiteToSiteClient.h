@@ -88,9 +88,14 @@ typedef enum {
 
 
 @interface NiFiSiteToSiteClientConfig : NSObject <NSCopying>
-@property (nonatomic, retain, readwrite, nonnull) NSString *host;  // no default, must be set
-@property (nonatomic, retain, readwrite, nonnull) NSNumber *port;  // no default, must be set
-@property (nonatomic, retain, readwrite, nonnull) NSString *portId;  // no default, must be set
+@property (nonatomic, retain, readwrite, nonnull) NSString *host;  // NiFi server host; no default, must be set
+@property (nonatomic, retain, readwrite, nonnull) NSNumber *port;  // NiFi server port; no default, must be set
+@property (nonatomic, retain, readwrite, nonnull) NSString *portName;  // Name of S2S input port at the server's configured flow
+                                                                       // to which to send flow files.
+                                                                       // Optional, not needed if portId is set.
+@property (nonatomic, retain, readwrite, nonnull) NSString *portId;    // ID of S2S input port at the server's configured flow
+                                                                       // to which to send flow files.
+                                                                       // Optional, not needed if portName is set.
 @property (nonatomic, readwrite) NiFiSiteToSiteTransportProtocol transportProtocol;  // defaults to HTTP
 @property (nonatomic, readwrite) bool secure;  // defaults to false
 @property (nonatomic, retain, readwrite, nullable) NSString *username;  // client credentials for two-way auth; ignored if secure is false

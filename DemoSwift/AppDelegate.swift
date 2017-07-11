@@ -16,7 +16,6 @@
  */
 
 import UIKit
-import s2s
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -64,7 +63,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let s2sConfigDefaults = [
             "nifi.s2s.config.host": "localhost",
             "nifi.s2s.config.port": 32768,
-            "nifi.s2s.config.portId": "cb655af6-015c-1000-4b7c-e344b815744d", // todo, add lookup by port-name in service
+            "nifi.s2s.config.portName": "From iOS",
             "nifi.s2s.config.secure": true,
             "nifi.s2s.config.secure.username": "admin",
             "nifi.s2s.config.secure.password": "admin-password",

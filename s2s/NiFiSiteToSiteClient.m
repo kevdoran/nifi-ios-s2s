@@ -147,9 +147,10 @@
 
 - (id)copyWithZone:(NSZone *)zone {
     NiFiSiteToSiteClientConfig * copy = [[NiFiSiteToSiteClientConfig alloc] init];
-    copy.host = [_host copyWithZone:zone];
-    copy.port = [_port copyWithZone:zone];
-    copy.portId = [_portId copyWithZone:zone];
+    copy.host = _host ? [_host copyWithZone:zone] : nil;
+    copy.port = _port ? [_port copyWithZone:zone] : nil;
+    copy.portName = _portName ? [_portName copyWithZone:zone] : nil;
+    copy.portId = _portId ? [_portId copyWithZone:zone] : nil;
     copy.transportProtocol = _transportProtocol;
     copy.secure = _secure;
     copy.username = [_username copyWithZone:zone];

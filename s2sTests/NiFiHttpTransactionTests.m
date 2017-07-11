@@ -58,6 +58,11 @@
     return returnVal;
 }
 
+- (nullable NSString *)getPortIdForPortName:(nonnull NSString *)portName
+                                      error:(NSError *_Nullable *_Nullable)error {
+    return @"12345678-1234-1234-1234-1234567890abc";
+}
+
 - (void)extendTTLForTransaction:(nonnull NSString *)transactionUrl error:(NSError *_Nullable *_Nullable)error {
     _ttlExtensionCallCount++;
 }

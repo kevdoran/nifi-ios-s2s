@@ -202,7 +202,31 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
     NiFiHttpRestApiClient *restApiClient = [[NiFiHttpRestApiClient alloc] initWithBaseUrl:apiBaseUrlComponents.URL
                                                                          clientCredential:credential
                                                                                urlSession:(NSObject<NSURLSessionProtocol> *)urlSession];
-    return [[NiFiHttpTransaction alloc] initWithPortId:super.config.portId httpRestApiClient:restApiClient];
+    
+    NiFiHttpTransaction *transaction = nil;
+    if (super.config.portId) {
+        transaction = [[NiFiHttpTransaction alloc] initWithPortId:super.config.portId httpRestApiClient:restApiClient];
+    }
+    
+    if (!transaction && super.config.portName) { // if we don't have port id, or if init by port id failed, try init by name.
+        NSError *portIdLookupError;
+        NSString *portId = [restApiClient getPortIdForPortName:super.config.portName error:&portIdLookupError];
+        if (portIdLookupError || portId == nil) {
+            NSLog(@"When looking up port ID by name, encountered error with domain=%@, code=%ld, message=%@",
+                  portIdLookupError.domain,
+                  (long)portIdLookupError.code,
+                  portIdLookupError.localizedDescription);
+            return nil;
+        } else {
+            NSLog(@"Discovered portId '%@' for input port named '%@'. Using that port for site-to-site transaction.", portId, super.config.portName);
+            super.config.portId = portId; // cache this in this client config so we don't have to look it up again.
+            transaction = [[NiFiHttpTransaction alloc] initWithPortId:portId httpRestApiClient:restApiClient];
+        }
+    } else {
+        NSLog(@"Could not create NiFi s2s transaction. Check NiFi s2s configuration. "
+              "Is the correct host, port, and s2s portName/portId set?");
+    }
+    return transaction;
 }
 
 @end

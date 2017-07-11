@@ -40,6 +40,7 @@ NS_ENUM(NSInteger)
     // Site-to-Site
     NiFiErrorSiteToSiteClient = 2000,
     NiFiErrorSiteToSiteClientCouldNotCreateTransaction = 2001,
+    NiFiErrorSiteToSiteClientCouldNotLookupPortByName= 2002,
     
     // Site-to-Site Transaction
     NiFiErrorSiteToSiteTransaction = 3000,

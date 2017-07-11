@@ -45,7 +45,7 @@ NiFiSiteToSiteClientConfig * s2sConfig = [[NiFiSiteToSiteClientConfig alloc] ini
 s2sConfig.transportProtocol = HTTP;
 s2sConfig.host = @"localhost";
 s2sConfig.port = [NSNumber numberWithInt:8080];
-s2sConfig.portId = @"82f79eb6-015c-1000-d191-ee1ef23b1a74";
+s2sConfig.portName = @"From iOS";
 
 id s2sClient = [NiFiSiteToSiteClient clientWithConfig:s2sConfig];
 
@@ -86,8 +86,8 @@ Below are basic usage examples of the s2s Cocoa Framework as a module in Swift.
 ```swift
 let s2sClientConfig = NiFiSiteToSiteClientConfig()
 s2sClientConfig.host = "localhost"
-s2sClientConfig.port = 32768
-s2sClientConfig.portId = "cb655af6-015c-1000-4b7c-e344b815744d"
+s2sClientConfig.port = 8080
+s2sConfig.portName = "From iOS";
 
 let s2sClient = NiFiSiteToSiteClient(config: s2sClientConfig)
 
@@ -116,7 +116,7 @@ do {
 let s2sClientConfig = NiFiSiteToSiteClientConfig()
 s2sClientConfig.host = "localhost"
 s2sClientConfig.port = 8080
-s2sClientConfig.portId = "cb655af6-015c-1000-4b7c-e344b815744d"
+s2sConfig.portName = "From iOS";
 
 let data1 = NiFiDataPacket(attributes: ["packetNumber": "1"],
                            data: "Data Packet 1".data(using: String.Encoding.utf8))
@@ -142,8 +142,7 @@ import s2s
 let s2sClientConfig = NiFiQueuedSiteToSiteClientConfig()
 s2sClientConfig.host = "localhost"
 s2sClientConfig.port = 8080
-s2sClientConfig.portId = "82f79eb6-015c-1000-d191-ee1ef23b1a74"
-s2sClientConfig.secure = false
+s2sConfig.portName = "From iOS";
 s2sClientConfig.dataPacketPrioritizer = NiFiNoOpDataPacketPrioritizer(fixedTTL: 60.0)
 
 // ...
@@ -201,6 +200,11 @@ For more information, see "Performing Custom TLS Chain Validation" in [Apple's U
 Client authentication to the NiFi server is currently supported via username and password credentials, which can be specified in the site-to-site client configuration.
 
 ## FAQ and Troubleshooting
+
+*Q: In my application logs I see, "Unable to discover port id for site-to-site input port with name '...'. Server returned status code '403'."*
+
+A: This is a permissions issue with the user you are using to connect to the NiFi API. Check the Policies menu in the NiFI UI and make sure the user has an access policy for 'retrieve site-to-site details'.
+
 
 *Q: I cannot successfully send data over a secure connection. In my application logs I see, "ERROR  An SSL error has occurred and a secure connection to the server cannot be made."*
 

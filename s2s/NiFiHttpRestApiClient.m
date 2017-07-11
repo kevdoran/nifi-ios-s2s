@@ -218,6 +218,102 @@ static NSString *const HTTP_HEADER_LOCATION_URI_INTENT_VALUE = @"transaction-url
     return transactionResource;
 }
 
+- (nullable NSString *)getPortIdForPortName:(nonnull NSString *)portName
+                                      error:(NSError *_Nullable *_Nullable)error {
+    // Discover PortID (UUID) from Port Name by asking the server
+    NSString *portId = nil;
+    
+    NSURLComponents * urlComponents = [_baseUrlComponents copy];
+    urlComponents.path = [NSString stringWithFormat:@"%@/site-to-site", urlComponents.path];
+    NSURL *url = urlComponents.URL;
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url
+                                                           cachePolicy:NSURLRequestUseProtocolCachePolicy
+                                                       timeoutInterval:DEFAULT_HTTP_TIMEOUT];
+    [request setHTTPMethod:@"GET"];
+    
+    NSDictionary *headers = @{@"Accept": @"application/json"};
+    [request setAllHTTPHeaderFields:headers];
+    
+    [self addAuthTokenHeaderToRequest:&request error:error];
+    
+    NSData *data;
+    NSHTTPURLResponse *response;
+    NSError *dataTaskError;
+    
+    [self synchronousDataTaskWithRequest:request
+                              dataOutput:&data
+                          responseOutput:&response
+                             errorOutput:&dataTaskError];
+    
+    if (response == nil) {
+        if (error) {
+            *error = dataTaskError ?: [NSError errorWithDomain:NiFiErrorDomain code:NiFiErrorSiteToSiteClientCouldNotLookupPortByName userInfo:nil];
+        }
+        NSLog(@"Unable to discover port id for site-to-site input port with name '%@'. Error communicating with peer.", portName);
+        return nil;
+    } else if (response.statusCode != 200) {
+        if (error) {
+            *error = [NSError errorWithDomain:NiFiErrorDomain code:NiFiErrorHttpStatusCode + response.statusCode userInfo:nil];
+        }
+        NSLog(@"Unable to discover port id for site-to-site input port with name '%@'. Server returned status code '%ld'.",
+              portName, (long)response.statusCode);
+        return nil;
+    }
+    
+    // Response body should be JSON with site-to-site info
+    NSError *jsonError;
+    NSDictionary *bodyJson = [NSJSONSerialization JSONObjectWithData:data
+                                                             options:0
+                                                               error:&jsonError];
+    if (jsonError) {
+        if (error) {
+            *error = jsonError;
+            NSLog(@"Unable to discover port id for site-to-site input port with name '%@'. Error deserializing JSON response.", portName);
+            return nil;
+        }
+    }
+    
+    NSMutableDictionary *portIdsByName = nil;
+    if (bodyJson && bodyJson[@"controller"]) {
+        NSArray *inputPorts = bodyJson[@"controller"][@"inputPorts"];
+        if (inputPorts) {
+            portIdsByName = [NSMutableDictionary dictionary];
+            for (NSDictionary *inputPort in inputPorts) {
+                if (inputPort[@"id"] && inputPort[@"name"]) {
+                    NSString *existingIdValue = [portIdsByName objectForKey:inputPort[@"name"]];
+                    if (!existingIdValue) {
+                        [portIdsByName setValue:inputPort[@"id"] forKey:inputPort[@"name"]];
+                    } else {
+                        NSLog(@"WARNING: NiFI peer API reporting duplicate input ports named '%@'. '%@' and '%@' both found. Using '%@'",
+                              inputPort[@"name"],
+                              existingIdValue, inputPort[@"id"],
+                              existingIdValue);
+                    }
+                }
+            }
+        }
+    }
+    if (!portIdsByName) {
+        if (error) {
+            *error = [NSError errorWithDomain:NiFiErrorDomain code:NiFiErrorSiteToSiteClientCouldNotLookupPortByName userInfo:nil];
+        }
+        NSLog(@"Unable to discover port id for site-to-site input port with name '%@'. No input ports found in JSON response. Possible protocol error", portName);
+        return nil;
+    }
+    
+    portId = portIdsByName[portName];
+    if (!portId) {
+        if (error) {
+            *error = dataTaskError ?: [NSError errorWithDomain:NiFiErrorDomain code:NiFiErrorSiteToSiteClientCouldNotLookupPortByName userInfo:nil];
+        }
+        NSLog(@"Unable to discover port id for site-to-site input port with name '%@'. Every working as expected, but no port with that name was found at peer '%@'", portName, [request.URL absoluteString]);
+        return nil;
+    }
+    
+    // If we get this far, port ID was successfully resolved using data returned by NiFI HTTP API for peer.
+    return portId;
+}
+
 - (void)extendTTLForTransaction:(nonnull NSString *)transactionUrl error:(NSError **)error {
     NSURL *url = [NSURL URLWithString:transactionUrl];
     NSMutableURLRequest *ttlExtendRequest = [NSMutableURLRequest requestWithURL:url

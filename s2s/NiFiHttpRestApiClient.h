@@ -56,6 +56,9 @@
 - (nullable NiFiTransactionResource *)initiateSendTransactionToPortId:(nonnull NSString *)portId
                                                                 error:(NSError *_Nullable *_Nullable)error;
 
+- (nullable NSString *)getPortIdForPortName:(nonnull NSString *)portName
+                                      error:(NSError *_Nullable *_Nullable)error;
+
 - (void)extendTTLForTransaction:(nonnull NSString *)transactionUrl error:(NSError *_Nullable *_Nullable)error;
 
 - (NSInteger)sendFlowFiles:(nonnull NiFiDataPacketEncoder *)dataPacketEncoder
