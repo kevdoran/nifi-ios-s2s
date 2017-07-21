@@ -17,6 +17,7 @@
 
 #import <Foundation/Foundation.h>
 #import "NiFiSiteToSite.h"
+#import "NiFiSiteToSiteConfig.h"
 
 /********** ProxyConfig Implementation **********/
 
@@ -33,17 +34,17 @@
 - (instancetype) initWithUrl:(NSURL *)url {
     self = [super init];
     if(self != nil) {
-        _proxyUrl = url;
-        _proxyUsername = nil;
-        _proxyPassword = nil;
+        _url = url;
+        _username = nil;
+        _password = nil;
     }
     return self;
 }
 
 - (id)copyWithZone:(NSZone *)zone {
-    id copy = [[[self class] alloc] initWithUrl:[_proxyUrl copyWithZone:zone]];
-    ((NiFiProxyConfig *)copy).proxyUsername = [_proxyUsername copyWithZone:zone];
-    ((NiFiProxyConfig *)copy).proxyPassword = [_proxyPassword copyWithZone:zone];
+    id copy = [[[self class] alloc] initWithUrl:[_url copyWithZone:zone]];
+    ((NiFiProxyConfig *)copy).username = [_username copyWithZone:zone];
+    ((NiFiProxyConfig *)copy).password = [_password copyWithZone:zone];
     return copy;
 }
 

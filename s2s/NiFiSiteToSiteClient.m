@@ -17,6 +17,7 @@
 
 #import <Foundation/Foundation.h>
 #import "NiFiSiteToSite.h"
+#import "NiFiSiteToSiteConfig.h"
 #import "NiFiSiteToSiteClient.h"
 #import "NiFiHttpRestApiClient.h"
 
@@ -287,8 +288,43 @@
 
 - (NSURLSession *)createUrlSession {
     NSURLSession *urlSession;
-    if (self.remoteClusterConfig.urlSessionConfiguration || self.remoteClusterConfig.urlSessionDelegate) {
+    if (self.remoteClusterConfig.urlSessionConfiguration ||
+            self.remoteClusterConfig.urlSessionDelegate ||
+            self.remoteClusterConfig.proxyConfig) {
+        
         NSURLSessionConfiguration *configuration = self.remoteClusterConfig.urlSessionConfiguration ?: [NSURLSessionConfiguration defaultSessionConfiguration];
+        
+        if (self.remoteClusterConfig.proxyConfig) {
+            NiFiProxyConfig *proxyConfig = self.remoteClusterConfig.proxyConfig;
+            // If the lib caller configured its own proxy settings, use that rather than this attempt to auto-configure
+            if (!configuration.connectionProxyDictionary || configuration.connectionProxyDictionary.count == 0) {
+                NSMutableDictionary *proxyConfigDictionary = [NSMutableDictionary dictionary];
+                if ([proxyConfig.url.scheme isEqualToString:@"http"]) {
+                    proxyConfigDictionary[(NSString *)kCFProxyTypeHTTP] = @(1);
+                } else if ([proxyConfig.url.scheme isEqualToString:@"https"]) {
+                    proxyConfigDictionary[(NSString *)kCFProxyTypeHTTPS] = @(1);
+                } else {
+                    NSLog(@"Warning: NiFi SiteToSite Proxy URL does not use http or https protocol scheme.");
+                }
+                
+                if (proxyConfig.url && proxyConfig.url.host) {
+                    proxyConfigDictionary[(NSString *)kCFProxyHostNameKey] = proxyConfig.url.host;
+                }
+                if (proxyConfig.url && proxyConfig.url.port) {
+                    proxyConfigDictionary[(NSString *)kCFProxyPortNumberKey] = proxyConfig.url.port;
+                } else {
+                    // TODO, test if default HTTP/S ports will be used. If not, set the defaults here.
+                }
+                
+                if (proxyConfig.username && proxyConfig.password) {
+                    proxyConfigDictionary[(NSString *)kCFProxyUsernameKey] = proxyConfig.username;
+                    proxyConfigDictionary[(NSString *)kCFProxyPasswordKey] = proxyConfig.username;
+                }
+                
+                configuration.connectionProxyDictionary = proxyConfigDictionary;
+            }
+        }
+        
         urlSession = [NSURLSession sessionWithConfiguration:configuration
                                                    delegate:self.remoteClusterConfig.urlSessionDelegate
                                               delegateQueue:nil];

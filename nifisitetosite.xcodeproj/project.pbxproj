@@ -38,6 +38,7 @@
 		C07B8C5C1F056E6800069647 /* FMDB.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C07B8C5B1F056E6800069647 /* FMDB.framework */; };
 		C07B8C6A1F05741700069647 /* NiFiSiteToSiteDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = C07B8C691F05741700069647 /* NiFiSiteToSiteDatabase.m */; };
 		C0923D3C1F214B3400ACEE95 /* NiFiSiteToSiteClient.h in Headers */ = {isa = PBXBuildFile; fileRef = C0923D3B1F214B3400ACEE95 /* NiFiSiteToSiteClient.h */; };
+		C0923D3E1F2252AC00ACEE95 /* NiFiSiteToSiteConfig.h in Headers */ = {isa = PBXBuildFile; fileRef = C0923D3D1F2252AC00ACEE95 /* NiFiSiteToSiteConfig.h */; };
 		C0D3608B1EF2F9C0008B1BB5 /* NiFiHttpRestApiClientTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C0D3608A1EF2F9C0008B1BB5 /* NiFiHttpRestApiClientTests.m */; };
 		C0D3609E1EF97854008B1BB5 /* NiFiError.h in Headers */ = {isa = PBXBuildFile; fileRef = C0D3609D1EF97854008B1BB5 /* NiFiError.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		C0D360A01EF97BA1008B1BB5 /* NiFiError.m in Sources */ = {isa = PBXBuildFile; fileRef = C0D3609F1EF97BA1008B1BB5 /* NiFiError.m */; };
@@ -130,6 +131,7 @@
 		C07B8C5B1F056E6800069647 /* FMDB.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FMDB.framework; path = Carthage/Build/iOS/FMDB.framework; sourceTree = "<group>"; };
 		C07B8C691F05741700069647 /* NiFiSiteToSiteDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteDatabase.m; sourceTree = "<group>"; };
 		C0923D3B1F214B3400ACEE95 /* NiFiSiteToSiteClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteClient.h; sourceTree = "<group>"; };
+		C0923D3D1F2252AC00ACEE95 /* NiFiSiteToSiteConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteConfig.h; sourceTree = "<group>"; };
 		C0D3608A1EF2F9C0008B1BB5 /* NiFiHttpRestApiClientTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiHttpRestApiClientTests.m; sourceTree = "<group>"; };
 		C0D3609D1EF97854008B1BB5 /* NiFiError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiError.h; sourceTree = "<group>"; };
 		C0D3609F1EF97BA1008B1BB5 /* NiFiError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiError.m; sourceTree = "<group>"; };
@@ -261,6 +263,7 @@
 				C0D360A91F01B6A3008B1BB5 /* NiFiSiteToSiteService.h */,
 				C0D3609D1EF97854008B1BB5 /* NiFiError.h */,
 				C03B17461F20E6E8000731C6 /* NiFiSiteToSiteModel.h */,
+				C0923D3D1F2252AC00ACEE95 /* NiFiSiteToSiteConfig.h */,
 				C0923D3B1F214B3400ACEE95 /* NiFiSiteToSiteClient.h */,
 				C074D5381EE1CDF000FF6787 /* NiFiHttpRestApiClient.h */,
 				C06ABFF71F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h */,
@@ -308,6 +311,7 @@
 				C06ABFF81F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h in Headers */,
 				C06ABFFA1F0ADEE700D1F60D /* NiFiSiteToSiteDatabaseFMDB.h in Headers */,
 				C03B17471F20E6E8000731C6 /* NiFiSiteToSiteModel.h in Headers */,
+				C0923D3E1F2252AC00ACEE95 /* NiFiSiteToSiteConfig.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -176,20 +176,31 @@ To run the tests, select 's2sTests' as the active scheme in XCode, switch to the
 
 To run one of the demo apps, select 'DemoSwift' or 'Demo' as the active scheme in XCode and click the Build and Play scheme button.
 
-## Security
+## Network Connection Configuration
 
-### Server Identity
+The s2s framework uses Apple's [NSURL family of APIs](https://developer.apple.com/documentation/foundation/nsurl) internally, 
+i.e. NSURLSession. You can customize this in `NiFiSiteToSiteRemoteClusterConfig` by specifying a custom 
+[NSURLSessionConfiguration](https://developer.apple.com/documentation/foundation/nsurlsessionconfiguration) and/or 
+[NSURLSessionDelegate](https://developer.apple.com/documentation/foundation/nsurlsessiondelegate).
 
-The S2S Framework can use TLS when communicating to a NiFI server, provided the NiFi server is 
-configured for secure communication.
+This gives you a lot of flexibility and control regarding how connections are established to each remote NiFi cluster. Two
+specific types of connection configuration, [secure connections](#security) and [proxy settings](#proxy-configuration), 
+are covered in this document.
+
+### Security
+
+#### Server Identity
+
+The S2S Framework can use TLS when communicating to a NiFI server, provided the NiFi server is configured for secure communication.
 
 If a NiFi server is using a certificate signed by a [trusted root Certificate Authority](https://support.apple.com/en-us/HT204132), 
-all that is required is to configure the site-to-site client with the option `secure=true`. HTTPS will be used as the 
-transport protocol.
+all that is required is to configure the site-to-site client with the option `secure=true`. HTTPS will be used as the  transport protocol.
 
-If the NiFi server is using a self-signed certificate (e.g., a test environment), or your app needs to perform nonstandard TLS chain validation for some other reason, 
-there is more you must do to make the system trust the CA. It is recommended you add that authority's trust anchor as described at the bottom of the [Apple Secure Networking Guide](https://developer.apple.com/library/content/documentation/NetworkingInternetWeb/Conceptual/NetworkingOverview/SecureNetworking/SecureNetworking.html).
-Alternatively, although not a recommended practice, you can override TLS chain validation with custom logic. The s2s framework uses Apple's NSURL family of APIs internally (i.e., NSURLSession), therefore, in order 
+If the NiFi server is using a self-signed certificate (e.g., a test environment), or your app needs to perform nonstandard TLS chain 
+validation for some other reason, there is more you must do to make the system trust the CA. It is recommended you add that authority's 
+trust anchor as described at the bottom of the [Apple Secure Networking Guide](https://developer.apple.com/library/content/documentation/NetworkingInternetWeb/Conceptual/NetworkingOverview/SecureNetworking/SecureNetworking.html).
+Alternatively, although not a recommended practice, you can override TLS chain validation with custom logic. The s2s framework uses Apple's 
+[NSURL family of APIs](https://developer.apple.com/documentation/foundation/nsurl) internally, i.e. NSURLSession. Therefore, in order 
 to provide custom TLS chain validation your app must implement a URLSessionDelegate that overrides the 
 function [URLSession:didReceiveChallenge:completionHandler:](https://developer.apple.com/documentation/foundation/nsurlsessiondelegate/1409308-urlsession). Within 
 your authentication handler delegate method, you should check to see if the challenge protection space has an authentication type of NSURLAuthenticationMethodServerTrust,
@@ -203,7 +214,7 @@ For more information, see "Performing Custom TLS Chain Validation" in [Apple's U
 * [iOS Networking Topics > Overriding TLS Chain Validation Correctly](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/NetworkingTopics/Articles/OverridingSSLChainValidationCorrectly.html)
 * [Apple Secure Networking Guide](https://developer.apple.com/library/content/documentation/NetworkingInternetWeb/Conceptual/NetworkingOverview/SecureNetworking/SecureNetworking.html)
 
-### Client Identity
+#### Client Identity
 
 Client authentication to the NiFi server is supported in two ways:
 
@@ -219,6 +230,34 @@ Therefore, if your app requires to make use of the s2s module in the background,
 are utilized in the library to communicate with the server to create an authentication token for site-to-site communication. For more information on
 this limitation of Apple's iOS platform, see: https://forums.developer.apple.com/thread/28713
 
+### Proxy Configuration
+
+NiFi clusters cans be configured to be accessed via an HTTP/S proxy for the SiteToSite protocol. If this is how the remote NiFi cluster is configured, and you wish to
+connect via a proxy, this is possible via the `SiteToSiteConfig.urlSessionConfiguration` field.
+
+For information on how to do this, see the following resources:
+
+* [NSURLSessionConfiguration](https://developer.apple.com/documentation/foundation/nsurlsessionconfiguration)
+* [NSURLSessionConfiguration.connectionProxyDictionary](https://developer.apple.com/documentation/foundation/nsurlsessionconfiguration)
+   * [Global Proxy Settings](https://developer.apple.com/documentation/cfnetwork/global_proxy_settings_constants)
+   * [CFNetwork Property Keys](https://developer.apple.com/documentation/cfnetwork/property_keys)
+
+Here is an Objective-C example:
+
+```objective-c
+NSMutableDictionary *proxyConfigDictionary = [NSMutableDictionary dictionary];
+proxyConfigDictionary[(NSString *)kCFProxyTypeHTTPS] = @(1);
+proxyConfigDictionary[(NSString *)kCFProxyHostNameKey] = @"myproxy.example.com";
+proxyConfigDictionary[(NSString *)kCFProxyPortNumberKey] = @(8080);
+proxyConfigDictionary[(NSString *)kCFProxyUsernameKey] = @"proxyUsername";
+proxyConfigDictionary[(NSString *)kCFProxyPasswordKey] = @"proxyPassword";
+
+NiFiSiteToSiteRemoteClusterConfig *remoteClusterConfig = ...
+remoteClusterConfig.urlSessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
+// Set other URL Session Configuration options as desired ...
+remoteClusterConfig.urlSessionConfiguration.connectionProxyDictionary = proxyConfigDictionary;
+```
+
 ## FAQ and Troubleshooting
 
 *Q: In my application logs I see, "Unable to discover port id for site-to-site input port with name '...'. Server returned status code '403'."*
@@ -229,6 +268,7 @@ A: This is a permissions issue with the user you are using to connect to the NiF
 *Q: I cannot successfully send data over a secure connection. In my application logs I see, "ERROR  An SSL error has occurred and a secure connection to the server cannot be made."*
 
 A: TLS validation is failing, e.g., it could be that TLS chain validation of the server's certificate is failing. See the Security section above for how to configure your app to communicate over TLS.
+
 
 *Q: I cannot successfully send data over a secure connection. In my application logs I see, "kCFStreamErrorDomainSSL"*
 

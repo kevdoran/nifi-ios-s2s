@@ -47,18 +47,9 @@ typedef enum {
 
 // MARK: - Config Classes -
 
-@interface NiFiProxyConfig : NSObject <NSCopying>
-@property (nonatomic, retain, readwrite, nonnull) NSURL *proxyUrl;   // HTTP(S) URL of proxy, required
-@property (nonatomic, retain, readwrite, nullable) NSString *proxyUsername;  // optional proxy credentials for Basic Auth authenticaton
-@property (nonatomic, retain, readwrite, nullable) NSString *proxyPassword;  // optional proxy credentials for Basic Auth authenticaton
-+ (nullable instancetype) proxyConfigWithUrl:(nonnull NSURL *)url;
-@end
-
-
 @interface NiFiSiteToSiteRemoteClusterConfig : NSObject <NSCopying>
 @property (nonatomic, retain, readwrite, nonnull) NSMutableSet<NSURL *> *urls;
 @property (nonatomic, readwrite) NiFiSiteToSiteTransportProtocol transportProtocol;  // defaults to HTTP
-@property (nonatomic, retain, readwrite, nullable) NiFiProxyConfig *proxyConfig;  // optional HTTP proxy to use to connect to remote cluster
 @property (nonatomic, retain, readwrite, nullable) NSString *username;  // optional NiFi user credentials for two-way auth
 @property (nonatomic, retain, readwrite, nullable) NSString *password;  // optional NiFi user credentials for two-way auth
 @property (nonatomic, retain, readwrite, nullable) NSURLSessionConfiguration *urlSessionConfiguration;  // optional URLSessionConfiguration to use
