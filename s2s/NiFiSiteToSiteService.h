@@ -18,7 +18,12 @@
 #ifndef NiFiSiteToSiteService_h
 #define NiFiSiteToSiteService_h
 
-#import "NiFiSiteToSiteClient.h"
+/* Visibility: External / Public
+ *
+ * This header defines a public interface of the s2s framework / module.
+ */
+
+#import "NiFiSiteToSite.h"
 
 
 /* This protocol can be implemented by the user of this framework to specify app-specific buisiness logic for

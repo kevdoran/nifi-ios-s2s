@@ -15,17 +15,21 @@
  * See the associated NOTICE file for additional information regarding copyright ownership.
  */
 
-#ifndef NiFiSiteToSiteClientPrivate_h
-#define NiFiSiteToSiteClientPrivate_h
+#ifndef NiFiSiteToSiteModel_h
+#define NiFiSiteToSiteModel_h
 
-/* 
+/* Visibility: Internal / Private
+ *
  * This header declares classes and functionality that is only for use
  * internally in the site to site library implementation and not designed
- * for users of the site to site library. 
+ * for users of the site to site library.
+ *
+ * This contains a collection of miscellaneous model object types.
  */
 
-#import <Foundation/Foundation.h>
-#import "NiFiSiteToSiteClient.h"
+# import "NiFiSiteToSite.h"
+
+// MARK: - Internal Enums
 
 typedef enum {
     RESERVED = 0, // in case we need to extend the length of response code,
@@ -60,17 +64,7 @@ typedef enum {
 } NiFiTransactionResponseCode;
 
 
-@interface NiFiPeer : NSObject <NiFiCommunicant>
-- (nullable NSURL *)url;
-- (nullable NSString *)host;
-- (nullable NSNumber *)port;
-- initWithUrl:(nonnull NSURL *)url;
-- (void)markFailure;
-- (NSTimeInterval)lastFailure; //TimeIntervalSinceReferenceDate
-- (NSUInteger)flowFileCount;
-- (bool)secure;
-@end
-
+// MARK: - Internal Extensions to External Types
 
 @interface NiFiTransactionResult()
 @property (nonatomic, readwrite) NiFiTransactionResponseCode responseCode;
@@ -85,6 +79,8 @@ typedef enum {
 @end
 
 
+// MARK: - Internal Types
+
 @interface NiFiDataPacketEncoder : NSObject
 // + (nonnull NSData *)encodeDataPacket:(nonnull NiFiDataPacket *)dataPacket;
 - (nonnull instancetype)init;
@@ -97,9 +93,4 @@ typedef enum {
 @end
 
 
-@interface NiFiSiteToSiteClient()
-@property (nonatomic, retain, readwrite, nonnull) NiFiSiteToSiteClientConfig *config;
-- (nonnull instancetype) initWithConfig:(nonnull NiFiSiteToSiteClientConfig *)config;
-@end
-
-#endif /* NiFiSiteToSiteClientPrivate_h */
+#endif /* NiFiSiteToSiteModel_h */

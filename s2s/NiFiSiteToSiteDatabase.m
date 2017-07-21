@@ -19,7 +19,7 @@
 #import "fmdb/FMDB.h"
 #import "NiFiError.h"
 #import "NiFiSiteToSiteService.h"
-#import "NiFiSiteToSiteDatabasePrivate.h"
+#import "NiFiSiteToSiteDatabaseFMDB.h"
 
 // Reasonably sized batches for bulk DB operations
 static const NSUInteger DATABASE_BATCH_SIZE = 2000L;

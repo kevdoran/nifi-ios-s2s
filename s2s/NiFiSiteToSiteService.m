@@ -17,7 +17,7 @@
 
 #import <Foundation/Foundation.h>
 #import "NiFiSiteToSiteService.h"
-#import "NiFiSiteToSiteClientPrivate.h"
+#import "NiFiSiteToSiteClient.h"
 #import "NiFiSiteToSiteDatabase.h"
 #import "NiFiError.h"
 
@@ -126,18 +126,6 @@ static const int QUEUED_S2S_CONFIG_DEFAULT_BATCH_SIZE = 1024L * 1024L; // 1 MB
     return self;
 }
 
-- (NSURLSession *)urlSession {
-    if (!_config) {
-        return nil;
-    }
-    NSURLSessionConfiguration *config = _config.urlSessionConfiguration ?: [NSURLSessionConfiguration defaultSessionConfiguration];
-    if (_config.urlSessionDelegate) {
-        return [NSURLSession sessionWithConfiguration:config delegate:_config.urlSessionDelegate delegateQueue:nil];
-    } else {
-        return [NSURLSession sessionWithConfiguration:config];
-    }
-}
-
 - (void) enqueueDataPacket:(nonnull NiFiDataPacket *)dataPacket error:(NSError *_Nullable *_Nullable)error {
     [self enqueueDataPackets:[NSArray arrayWithObjects:dataPacket, nil] error:error];
 }
@@ -170,7 +158,7 @@ static const int QUEUED_S2S_CONFIG_DEFAULT_BATCH_SIZE = 1024L * 1024L; // 1 MB
     // create a site-to-site client and initiate a trasaction with the nifi peer
     // we need the server-generated transaction id to continue with the db operation
     NiFiSiteToSiteClient *client = [NiFiSiteToSiteClient clientWithConfig:_config];
-    id transaction = [client createTransactionWithURLSession:[self urlSession]];
+    id transaction = [client createTransaction];
     if (!transaction || ![transaction transactionId]) {
         if (error) {
             *error = [NSError errorWithDomain:NiFiErrorDomain

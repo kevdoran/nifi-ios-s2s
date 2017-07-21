@@ -15,107 +15,40 @@
  * See the associated NOTICE file for additional information regarding copyright ownership.
  */
 
-/* 
- * NiFiSiteToSiteClient.h
- * Public Header, Site To Site Client Interface
- */
-
 #ifndef NiFiSiteToSiteClient_h
 #define NiFiSiteToSiteClient_h
 
-#import <Foundation/Foundation.h>
+/* Visibility: Internal / Private
+ *
+ * This header declares classes and functionality that is only for use
+ * internally in the site to site library implementation and not designed
+ * for users of the site to site library.
+ *
+ * Specifically, this should only be imported by NiFiSiteToSiteClient.m and
+ * test cases.
+ */
 
+#import "NiFiSiteToSiteModel.h"
+#import "NiFiHttpRestApiClient.h"
 
-typedef enum {
-    HTTP,
-    // RAW_SOCKET, // TODO, if needed, there is also a the socket variant of the NiFi Site-to-Site protocol that could be implemented
-} NiFiSiteToSiteTransportProtocol;
+@interface NiFiHttpTransaction : NSObject <NiFiTransaction>
 
+@property (nonatomic, retain, readwrite, nonnull) NSDate *startTime;
+@property (nonatomic, readwrite) NiFiTransactionState transactionState;
+@property (atomic, readwrite) bool shouldKeepAlive;
+@property (nonatomic, retain, readwrite, nonnull) NiFiHttpRestApiClient *restApiClient;
+@property (nonatomic, readwrite, nonnull) NiFiTransactionResource *transactionResource;
+@property (nonatomic, readwrite, nonnull) NSOutputStream *dataPacketWriterOutputStream;
+@property (nonatomic, readwrite, nonnull) NiFiDataPacketEncoder *dataPacketEncoder;
+@property (nonatomic, readwrite, nullable) NiFiPeer *peer;
 
-typedef enum {
-    TRANSACTION_STARTED,
-    DATA_EXCHANGED,
-    TRANSACTION_CONFIRMED,
-    TRANSACTION_COMPLETED,
-    TRANSACTION_CANCELED,
-    TRANSACTION_ERROR
-} NiFiTransactionState;
+- (nonnull instancetype) initWithPortId:(nonnull NSString *)portId
+                      httpRestApiClient:(nonnull NiFiHttpRestApiClient *)restApiClient;
 
-
-@interface NiFiDataPacket : NSObject
-
-+ (nonnull instancetype)dataPacketWithAttributes:(nonnull NSDictionary<NSString *, NSString *> *)attributes
-                                            data:(nullable NSData *)data;
-+ (nonnull instancetype)dataPacketWithAttributes:(nonnull NSDictionary<NSString *, NSString *> *)attributes
-                                      dataStream:(nullable NSInputStream *)dataStream
-                                      dataLength:(NSUInteger)length;
-+ (nonnull instancetype)dataPacketWithString:(nonnull NSString *)string;
-+ (nullable instancetype)dataPacketWithFileAtPath:(nonnull NSString *)filePath;
-
-- (void)setAttributeValue:(nullable NSString *)value forAttributeKey:(nonnull NSString *)key;
-
-- (nonnull NSDictionary<NSString *, NSString *> *)attributes;
-- (nullable NSData *)data;
-- (nullable NSInputStream *)dataStream;
-- (NSUInteger)dataLength;
+- (nonnull instancetype) initWithPortId:(nonnull NSString *)portId
+                      httpRestApiClient:(nonnull NiFiHttpRestApiClient *)restApiClient
+                                   peer:(nullable NiFiPeer *)peer;
 
 @end
-
-@protocol NiFiCommunicant <NSObject>
-- (nullable NSURL *)url;
-- (nullable NSString *)host;
-- (nullable NSNumber *)port;
-@end
-
-
-@interface NiFiTransactionResult : NSObject
-@property (nonatomic, readonly) uint64_t dataPacketsTransferred;
-@property (nonatomic, readonly) NSTimeInterval duration;
-@property (nonatomic, assign, readonly, nullable) NSString *message;
-- (bool)shouldBackoff;
-@end
-
-
-@protocol NiFiTransaction <NSObject>
-- (nonnull NSString *)transactionId;
-- (NiFiTransactionState)transactionState;
-- (void)sendData:(nonnull NiFiDataPacket *)data;
-- (void)cancel; // cancel the transaction
-- (void)error;  // mark the transaction as having encountered an error
-- (nullable NiFiTransactionResult *)confirmAndCompleteOrError:(NSError *_Nullable *_Nullable)error;
-- (nullable NSObject <NiFiCommunicant> *)getCommunicant;
-@end
-
-
-@interface NiFiSiteToSiteClientConfig : NSObject <NSCopying>
-@property (nonatomic, retain, readwrite, nonnull) NSString *host;  // NiFi server host; no default, must be set
-@property (nonatomic, retain, readwrite, nonnull) NSNumber *port;  // NiFi server port; no default, must be set
-@property (nonatomic, retain, readwrite, nonnull) NSString *portName;  // Name of S2S input port at the server's configured flow
-                                                                       // to which to send flow files.
-                                                                       // Optional, not needed if portId is set.
-@property (nonatomic, retain, readwrite, nonnull) NSString *portId;    // ID of S2S input port at the server's configured flow
-                                                                       // to which to send flow files.
-                                                                       // Optional, not needed if portName is set.
-@property (nonatomic, readwrite) NiFiSiteToSiteTransportProtocol transportProtocol;  // defaults to HTTP
-@property (nonatomic, readwrite) bool secure;  // defaults to false
-@property (nonatomic, retain, readwrite, nullable) NSString *username;  // client credentials for two-way auth; ignored if secure is false
-@property (nonatomic, retain, readwrite, nullable) NSString *password;  // client credentials for two-way auth; ignored if secure is false
-@property (nonatomic, retain, readwrite, nullable) NSURLSessionConfiguration *urlSessionConfiguration;  // optional URLSessionConfiguration to use
-@property (nonatomic, retain, readwrite, nullable) NSObject <NSURLSessionDelegate> *urlSessionDelegate;  // optional URLSessionDelegate to use
-- (nonnull instancetype)init;
-@end
-
-
-@interface NiFiSiteToSiteClient : NSObject
-+ (nonnull instancetype)clientWithConfig:(nonnull NiFiSiteToSiteClientConfig *)config;
-- (nullable NSObject <NiFiTransaction> *)createTransaction;
-- (nullable NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *_Nonnull)urlSession;
-@end
-
-
-@interface NiFiUtil : NSObject
-+ (nonnull NSString *)NiFiTransactionStateToString:(NiFiTransactionState)state;
-@end
-
 
 #endif /* NiFiSiteToSiteClient_h */

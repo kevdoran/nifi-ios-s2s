@@ -18,6 +18,11 @@
 #ifndef NiFiError_h
 #define NiFiError_h
 
+/* Visibility: External / Public
+ *
+ * This header defines a public interface of the s2s framework / module.
+ */
+
 #import <Foundation/NSError.h>
 
 FOUNDATION_EXPORT NSErrorDomain const NiFiErrorDomain;
@@ -40,7 +45,8 @@ NS_ENUM(NSInteger)
     // Site-to-Site
     NiFiErrorSiteToSiteClient = 2000,
     NiFiErrorSiteToSiteClientCouldNotCreateTransaction = 2001,
-    NiFiErrorSiteToSiteClientCouldNotLookupPortByName= 2002,
+    NiFiErrorSiteToSiteClientCouldNotLookupInputPorts= 2002,
+    NiFiErrorSiteToSiteClientCouldNotLookupPeers= 2003,
     
     // Site-to-Site Transaction
     NiFiErrorSiteToSiteTransaction = 3000,
@@ -53,7 +59,8 @@ NS_ENUM(NSInteger)
     
     // HTTP Rest API Client
     NiFiErrorHttpRestApiClient = 5000,
-    NiFiErrorHttpRestApiClientCouldNotFormURL = 5001
+    NiFiErrorHttpRestApiClientCouldNotFormURL = 5001,
+    
     
 };
 

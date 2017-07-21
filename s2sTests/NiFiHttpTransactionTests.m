@@ -17,7 +17,8 @@
 
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
-#import "NiFiHttpSiteToSiteClient.h"
+#import "NiFiSiteToSiteClient.h"
+#import "NiFiHttpRestApiClient.h"
 
 #define MOCK_SERVER_SIDE_TRANSACTION_TTL 4
 

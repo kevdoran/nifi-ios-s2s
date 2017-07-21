@@ -43,19 +43,23 @@ class QueuedViewController: UIViewController {
         // Do any additional setup after loading the view, typically from a nib.
         
         s2sClientConfig = NiFiQueuedSiteToSiteClientConfig()
-        s2sClientConfig.host = UserDefaults.standard.string(forKey: "nifi.s2s.config.host")!
-        s2sClientConfig.port = NSNumber(value: UserDefaults.standard.integer(forKey: "nifi.s2s.config.port"))
+        let nifiURL = URL(string: UserDefaults.standard.string(forKey: "nifi.s2s.config.cluster.url")!)
+        let s2sRemoteCluster = NiFiSiteToSiteRemoteClusterConfig(url: nifiURL!)
+        if let username = UserDefaults.standard.string(forKey: "nifi.s2s.config.secure.username"),
+            let password = UserDefaults.standard.string(forKey: "nifi.s2s.config.secure.password") {
+            s2sRemoteCluster?.username = username
+            s2sRemoteCluster?.password = password
+        }
+        s2sRemoteCluster?.urlSessionConfiguration = AppNetworkingUtils.demoUrlSessionConfiguration()
+        s2sRemoteCluster?.urlSessionDelegate = AppURLSessionDelegate()
+        s2sClientConfig.addRemoteCluster(s2sRemoteCluster!)
         if let portName = UserDefaults.standard.string(forKey: "nifi.s2s.config.portName") {
             s2sClientConfig.portName = portName
         }
         if let portId = UserDefaults.standard.string(forKey: "nifi.s2s.config.portId") {
             s2sClientConfig.portId = portId
         }
-        s2sClientConfig.secure = UserDefaults.standard.bool(forKey: "nifi.s2s.config.secure")
-        if s2sClientConfig.secure {
-            s2sClientConfig.username = UserDefaults.standard.string(forKey: "nifi.s2s.config.secure.username")
-            s2sClientConfig.password = UserDefaults.standard.string(forKey: "nifi.s2s.config.secure.password")
-        }
+        
         s2sClientConfig.maxQueuedPacketCount = NSNumber(
             value: UserDefaults.standard.integer(forKey: "nifi.s2s.config.queued.max_queued_packet_count"))
         s2sClientConfig.maxQueuedPacketSize = NSNumber(
@@ -65,9 +69,9 @@ class QueuedViewController: UIViewController {
         s2sClientConfig.preferredBatchSize = NSNumber(
             value: UserDefaults.standard.integer(forKey: "nifi.s2s.config.queued.preferred_batch_size"))
         
+        s2sClientConfig.peerUpdateInterval = 60.0 // seconds, outside of a demo scenario this should probably be set higher.
+        
         s2sClientConfig.dataPacketPrioritizer = NiFiNoOpDataPacketPrioritizer(fixedTTL: 60.0)
-        s2sClientConfig.urlSessionConfiguration = AppNetworkingUtils.demoUrlSessionConfiguration()
-        s2sClientConfig.urlSessionDelegate = AppURLSessionDelegate()
         
         // Other setup
         updateCreationAmount()

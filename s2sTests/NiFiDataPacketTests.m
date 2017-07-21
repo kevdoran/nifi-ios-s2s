@@ -17,7 +17,7 @@
 
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
-#import "NiFiSiteToSiteClientPrivate.h"
+#import "NiFiSiteToSiteClient.h"
 
 
 @interface NiFiDataPacketTests : XCTestCase

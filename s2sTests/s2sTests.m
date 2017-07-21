@@ -38,11 +38,10 @@
 
 
 - (void)testSiteToSiteUsage {
-
-    NiFiSiteToSiteClientConfig * s2sConfig = [[NiFiSiteToSiteClientConfig alloc] init];
-    s2sConfig.transportProtocol = HTTP;
-    s2sConfig.host = @"localhost";
-    s2sConfig.port = [NSNumber numberWithInt:8080];
+    
+    NiFiSiteToSiteRemoteClusterConfig *remoteNiFiInstance =
+        [NiFiSiteToSiteRemoteClusterConfig configWithUrl:[NSURL URLWithString:@"http://localhost:8080"]];
+    NiFiSiteToSiteClientConfig *s2sConfig = [NiFiSiteToSiteClientConfig configWithRemoteCluster: remoteNiFiInstance];
     s2sConfig.portName = @"From iOS";
     
     id s2sClient = [NiFiSiteToSiteClient clientWithConfig:s2sConfig];
@@ -77,11 +76,10 @@
 
 - (void)testSiteToSiteTTLUsage {
     
-    NiFiSiteToSiteClientConfig * s2sConfig = [[NiFiSiteToSiteClientConfig alloc] init];
-    s2sConfig.transportProtocol = HTTP;
-    s2sConfig.host = @"localhost";
-    s2sConfig.port = [NSNumber numberWithInt:8080];
-    s2sConfig.portId = @"82f79eb6-015c-1000-d191-ee1ef23b1a74";
+    NiFiSiteToSiteRemoteClusterConfig *remoteNiFiInstance =
+    [NiFiSiteToSiteRemoteClusterConfig configWithUrl:[NSURL URLWithString:@"http://localhost:8080"]];
+    NiFiSiteToSiteClientConfig *s2sConfig = [NiFiSiteToSiteClientConfig configWithRemoteCluster: remoteNiFiInstance];
+    s2sConfig.portName = @"From iOS";
     
     id s2sClient = [NiFiSiteToSiteClient clientWithConfig:s2sConfig];
     

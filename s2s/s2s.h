@@ -24,7 +24,7 @@ FOUNDATION_EXPORT double s2sVersionNumber;
 FOUNDATION_EXPORT const unsigned char s2sVersionString[];
 
 // In this header, you should import all the public headers of your framework using statements like #import <s2s/PublicHeader.h>
-#import "NiFiSiteToSiteClient.h"
+#import "NiFiSiteToSite.h"
 #import "NiFiSiteToSiteService.h"
 #import "NiFiError.h"
 

@@ -18,6 +18,14 @@
 #ifndef NiFiSiteToSiteDatabase_h
 #define NiFiSiteToSiteDatabase_h
 
+/* Visibility: Internal / Private
+ *
+ * This header declares classes and functionality that is only for use
+ * internally in the site to site library implementation and not designed
+ * for users of the site to site library.
+ */
+
+
 #import "NiFiSiteToSiteService.h"
 
 @interface NiFiQueuedDataPacketEntity : NSObject

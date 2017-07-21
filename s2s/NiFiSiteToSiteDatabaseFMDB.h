@@ -15,8 +15,16 @@
  * See the associated NOTICE file for additional information regarding copyright ownership.
  */
 
-#ifndef NiFiSiteToSiteDatabasePrivate_h
-#define NiFiSiteToSiteDatabasePrivate_h
+#ifndef NiFiSiteToSiteDatabaseFMDB_h
+#define NiFiSiteToSiteDatabaseFMDB_h
+
+/* Visibility: Internal / Private
+ *
+ * This header declares classes and functionality that is only for use
+ * internally in the site to site library implementation and not designed
+ * for users of the site to site library.
+ */
+
 
 #include "NiFiSiteToSiteDatabase.h"
 
@@ -36,6 +44,4 @@ typedef enum {
 - (nullable instancetype)initWithDatabaseFilePath:(nullable NSString *)path;  // only for testing!
 @end
 
-
-
-#endif /* NiFiSiteToSiteDatabasePrivate_h */
+#endif /* NiFiSiteToSiteDatabaseFMDB_h */

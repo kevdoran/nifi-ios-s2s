@@ -17,7 +17,7 @@
 
 #import <Foundation/Foundation.h>
 #import "NiFiHttpRestApiClient.h"
-#import "NiFiSiteToSiteClientPrivate.h"
+#import "NiFiSiteToSiteModel.h"
 #import "NiFiError.h"
 
 #define DEFAULT_HTTP_TIMEOUT 15.0
@@ -88,6 +88,8 @@ static NSString *const HTTP_HEADER_LOCATION_URI_INTENT_VALUE = @"transaction-url
 
 @implementation NiFiHttpRestApiClient
 
+// MARK: - Constructors
+
 - (nonnull instancetype) initWithBaseUrl:(nonnull NSURL *)baseUrl {
     return [self initWithBaseUrl:baseUrl
                     clientCredential:nil];
@@ -118,9 +120,189 @@ static NSString *const HTTP_HEADER_LOCATION_URI_INTENT_VALUE = @"transaction-url
     return self;
 }
 
+// MARK: - Accessors
+
 - (nullable NSURL *)baseUrl {
     return _baseUrlComponents.URL;
 }
+
+// MARK: - Discovery
+
+- (nullable NSDictionary *)getRemoteInputPortsOrError:(NSError *_Nullable *_Nullable)error {
+    NSURLComponents * urlComponents = [_baseUrlComponents copy];
+    urlComponents.path = [NSString stringWithFormat:@"%@/site-to-site", urlComponents.path];
+    NSURL *url = urlComponents.URL;
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url
+                                                           cachePolicy:NSURLRequestUseProtocolCachePolicy
+                                                       timeoutInterval:DEFAULT_HTTP_TIMEOUT];
+    [request setHTTPMethod:@"GET"];
+    
+    NSDictionary *headers = @{@"Accept": @"application/json"};
+    [request setAllHTTPHeaderFields:headers];
+    
+    [self addAuthTokenHeaderToRequest:&request error:error];
+    
+    NSData *data;
+    NSHTTPURLResponse *response;
+    NSError *dataTaskError;
+    
+    [self synchronousDataTaskWithRequest:request
+                              dataOutput:&data
+                          responseOutput:&response
+                             errorOutput:&dataTaskError];
+    
+    if (response == nil) {
+        if (error) {
+            *error = dataTaskError ?: [NSError errorWithDomain:NiFiErrorDomain
+                                                          code:NiFiErrorSiteToSiteClientCouldNotLookupInputPorts userInfo:nil];
+        }
+        NSLog(@"Unable to discover remote input ports. Error communicating with peer.");
+        return nil;
+    } else if (response.statusCode != 200) {
+        if (error) {
+            *error = [NSError errorWithDomain:NiFiErrorDomain code:NiFiErrorHttpStatusCode + response.statusCode userInfo:nil];
+        }
+        NSLog(@"Unable to discover remote input ports. Server returned status code '%ld'.", (long)response.statusCode);
+        return nil;
+    }
+    
+    // Response body should be JSON with site-to-site info
+    NSError *jsonError;
+    NSDictionary *bodyJson = [NSJSONSerialization JSONObjectWithData:data
+                                                             options:0
+                                                               error:&jsonError];
+    if (jsonError) {
+        if (error) {
+            *error = jsonError;
+            NSLog(@"Unable to discover remote input ports. Error deserializing JSON response.");
+            return nil;
+        }
+    }
+    
+    NSMutableDictionary *portIdsByName = nil;
+    if (bodyJson && bodyJson[@"controller"]) {
+        NSArray *inputPorts = bodyJson[@"controller"][@"inputPorts"];
+        if (inputPorts) {
+            portIdsByName = [NSMutableDictionary dictionary];
+            for (NSDictionary *inputPort in inputPorts) {
+                if (inputPort[@"id"] && inputPort[@"name"]) {
+                    NSString *existingIdValue = [portIdsByName objectForKey:inputPort[@"name"]];
+                    if (!existingIdValue) {
+                        [portIdsByName setValue:inputPort[@"id"] forKey:inputPort[@"name"]];
+                    } else {
+                        NSLog(@"WARNING: NiFI peer API reporting duplicate input ports named '%@'. '%@' and '%@' both found. Using '%@'",
+                              inputPort[@"name"],
+                              existingIdValue, inputPort[@"id"],
+                              existingIdValue);
+                    }
+                }
+            }
+        }
+    }
+    if (!portIdsByName) {
+        if (error) {
+            *error = [NSError errorWithDomain:NiFiErrorDomain
+                                         code:NiFiErrorSiteToSiteClientCouldNotLookupInputPorts userInfo:nil];
+        }
+        NSLog(@"Unable to discover remote input ports. No input ports found in JSON response. Possible protocol error.");
+        return nil;
+    }
+    
+    return portIdsByName;
+}
+
+- (nullable NSArray<NiFiPeer *> *)getPeersOrError:(NSError *_Nullable *_Nullable)error {
+    
+    NSURLComponents * urlComponents = [_baseUrlComponents copy];
+    urlComponents.path = [NSString stringWithFormat:@"%@/site-to-site/peers", urlComponents.path];
+    NSURL *url = urlComponents.URL;
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url
+                                                           cachePolicy:NSURLRequestUseProtocolCachePolicy
+                                                       timeoutInterval:DEFAULT_HTTP_TIMEOUT];
+    [request setHTTPMethod:@"GET"];
+    
+    NSDictionary *headers = @{@"Accept": @"application/json",
+                              HTTP_HEADER_PROTOCOL_VERSION: HTTP_SITE_TO_SITE_PROTOCOL_VERSION};
+    [request setAllHTTPHeaderFields:headers];
+    
+    [self addAuthTokenHeaderToRequest:&request error:error];
+    
+    NSData *data;
+    NSHTTPURLResponse *response;
+    NSError *dataTaskError;
+    
+    [self synchronousDataTaskWithRequest:request
+                              dataOutput:&data
+                          responseOutput:&response
+                             errorOutput:&dataTaskError];
+    
+    if (response == nil) {
+        if (error) {
+            *error = dataTaskError ?: [NSError errorWithDomain:NiFiErrorDomain
+                                                          code:NiFiErrorSiteToSiteClientCouldNotLookupPeers
+                                                      userInfo:nil];
+        }
+        NSLog(@"Unable to discover peers in remote cluster.");
+        return nil;
+    } else if (response.statusCode != 200) {
+        if (error) {
+            *error = [NSError errorWithDomain:NiFiErrorDomain code:NiFiErrorHttpStatusCode + response.statusCode userInfo:nil];
+        }
+        NSLog(@"Unable to discover peers in remote cluster. Server returned status code '%ld'.", (long)response.statusCode);
+        return nil;
+    }
+    
+    // Response body should be JSON with site-to-site info
+    NSError *jsonError;
+    NSDictionary *bodyJson = [NSJSONSerialization JSONObjectWithData:data
+                                                             options:0
+                                                               error:&jsonError];
+    if (jsonError) {
+        if (error) {
+            *error = jsonError;
+            NSLog(@"Unable to discover peers in remote cluster. Error deserializing JSON response.");
+            return nil;
+        }
+    }
+    
+    NSMutableArray *peers = nil;
+    if (bodyJson && bodyJson[@"peers"]) {
+        peers = [NSMutableArray arrayWithCapacity:[bodyJson[@"peers"] count]];
+        for (NSDictionary *peerJson in bodyJson[@"peers"]) {
+            
+            NiFiPeer *peer = nil;
+            if (peerJson[@"hostname"]) {
+                
+                NSURLComponents *peerUrlComponents = [[NSURLComponents alloc] init];
+                peerUrlComponents.host = peerJson[@"hostname"];
+                peerUrlComponents.port = peerJson[@"port"];
+                BOOL isSecurePeer = (peerJson[@"secure"] && [peerJson[@"secure"] boolValue]);
+                peerUrlComponents.scheme = isSecurePeer ? @"https" : @"http";
+                NSURL *peerUrl = peerUrlComponents.URL;
+                if (peerUrl) {
+                    peer = [NiFiPeer peerWithUrl:peerUrl];
+                    if (peerJson[@"flowFileCount"]) {
+                        peer.flowFileCount = [peerJson[@"flowFileCount"] integerValue];
+                    }
+                    [peers addObject:peer];
+                }
+            }
+        }
+    }
+    if (!peers) {
+        if (error) {
+            *error = [NSError errorWithDomain:NiFiErrorDomain
+                                         code:NiFiErrorSiteToSiteClientCouldNotLookupPeers
+                                     userInfo:nil];
+        }
+        NSLog(@"Unable to discover peers in remote cluster. No peers found in JSON response. Possible protocol error.");
+        return nil;
+    }
+    
+    return peers;
+}
+
+// MARK: - S2S HTTP Transaction
 
 - (nullable NiFiTransactionResource *)initiateSendTransactionToPortId:(nonnull NSString *)portId
                                                                 error:(NSError **)error {
@@ -216,102 +398,6 @@ static NSString *const HTTP_HEADER_LOCATION_URI_INTENT_VALUE = @"transaction-url
         return nil;
     }
     return transactionResource;
-}
-
-- (nullable NSString *)getPortIdForPortName:(nonnull NSString *)portName
-                                      error:(NSError *_Nullable *_Nullable)error {
-    // Discover PortID (UUID) from Port Name by asking the server
-    NSString *portId = nil;
-    
-    NSURLComponents * urlComponents = [_baseUrlComponents copy];
-    urlComponents.path = [NSString stringWithFormat:@"%@/site-to-site", urlComponents.path];
-    NSURL *url = urlComponents.URL;
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url
-                                                           cachePolicy:NSURLRequestUseProtocolCachePolicy
-                                                       timeoutInterval:DEFAULT_HTTP_TIMEOUT];
-    [request setHTTPMethod:@"GET"];
-    
-    NSDictionary *headers = @{@"Accept": @"application/json"};
-    [request setAllHTTPHeaderFields:headers];
-    
-    [self addAuthTokenHeaderToRequest:&request error:error];
-    
-    NSData *data;
-    NSHTTPURLResponse *response;
-    NSError *dataTaskError;
-    
-    [self synchronousDataTaskWithRequest:request
-                              dataOutput:&data
-                          responseOutput:&response
-                             errorOutput:&dataTaskError];
-    
-    if (response == nil) {
-        if (error) {
-            *error = dataTaskError ?: [NSError errorWithDomain:NiFiErrorDomain code:NiFiErrorSiteToSiteClientCouldNotLookupPortByName userInfo:nil];
-        }
-        NSLog(@"Unable to discover port id for site-to-site input port with name '%@'. Error communicating with peer.", portName);
-        return nil;
-    } else if (response.statusCode != 200) {
-        if (error) {
-            *error = [NSError errorWithDomain:NiFiErrorDomain code:NiFiErrorHttpStatusCode + response.statusCode userInfo:nil];
-        }
-        NSLog(@"Unable to discover port id for site-to-site input port with name '%@'. Server returned status code '%ld'.",
-              portName, (long)response.statusCode);
-        return nil;
-    }
-    
-    // Response body should be JSON with site-to-site info
-    NSError *jsonError;
-    NSDictionary *bodyJson = [NSJSONSerialization JSONObjectWithData:data
-                                                             options:0
-                                                               error:&jsonError];
-    if (jsonError) {
-        if (error) {
-            *error = jsonError;
-            NSLog(@"Unable to discover port id for site-to-site input port with name '%@'. Error deserializing JSON response.", portName);
-            return nil;
-        }
-    }
-    
-    NSMutableDictionary *portIdsByName = nil;
-    if (bodyJson && bodyJson[@"controller"]) {
-        NSArray *inputPorts = bodyJson[@"controller"][@"inputPorts"];
-        if (inputPorts) {
-            portIdsByName = [NSMutableDictionary dictionary];
-            for (NSDictionary *inputPort in inputPorts) {
-                if (inputPort[@"id"] && inputPort[@"name"]) {
-                    NSString *existingIdValue = [portIdsByName objectForKey:inputPort[@"name"]];
-                    if (!existingIdValue) {
-                        [portIdsByName setValue:inputPort[@"id"] forKey:inputPort[@"name"]];
-                    } else {
-                        NSLog(@"WARNING: NiFI peer API reporting duplicate input ports named '%@'. '%@' and '%@' both found. Using '%@'",
-                              inputPort[@"name"],
-                              existingIdValue, inputPort[@"id"],
-                              existingIdValue);
-                    }
-                }
-            }
-        }
-    }
-    if (!portIdsByName) {
-        if (error) {
-            *error = [NSError errorWithDomain:NiFiErrorDomain code:NiFiErrorSiteToSiteClientCouldNotLookupPortByName userInfo:nil];
-        }
-        NSLog(@"Unable to discover port id for site-to-site input port with name '%@'. No input ports found in JSON response. Possible protocol error", portName);
-        return nil;
-    }
-    
-    portId = portIdsByName[portName];
-    if (!portId) {
-        if (error) {
-            *error = dataTaskError ?: [NSError errorWithDomain:NiFiErrorDomain code:NiFiErrorSiteToSiteClientCouldNotLookupPortByName userInfo:nil];
-        }
-        NSLog(@"Unable to discover port id for site-to-site input port with name '%@'. Every working as expected, but no port with that name was found at peer '%@'", portName, [request.URL absoluteString]);
-        return nil;
-    }
-    
-    // If we get this far, port ID was successfully resolved using data returned by NiFI HTTP API for peer.
-    return portId;
 }
 
 - (void)extendTTLForTransaction:(nonnull NSString *)transactionUrl error:(NSError **)error {
@@ -459,6 +545,8 @@ static NSString *const HTTP_HEADER_LOCATION_URI_INTENT_VALUE = @"transaction-url
     }
     return transactionResult;
 }
+
+// MARK: - Helper functions
 
 /* A call to this method will block.
  * It is only desinged to be called from a background thread, not a UI thread. */

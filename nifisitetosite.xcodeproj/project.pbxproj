@@ -7,9 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C0067D451F1E481C008C8A21 /* NiFiSiteToSiteConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = C0067D441F1E481C008C8A21 /* NiFiSiteToSiteConfig.m */; };
+		C0067D471F1E69B2008C8A21 /* NiFiPeer.m in Sources */ = {isa = PBXBuildFile; fileRef = C0067D461F1E69B2008C8A21 /* NiFiPeer.m */; };
+		C0067D491F1E6A30008C8A21 /* NiFiSiteToSiteUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = C0067D481F1E6A30008C8A21 /* NiFiSiteToSiteUtil.m */; };
+		C03B17471F20E6E8000731C6 /* NiFiSiteToSiteModel.h in Headers */ = {isa = PBXBuildFile; fileRef = C03B17461F20E6E8000731C6 /* NiFiSiteToSiteModel.h */; };
 		C0435F861EEF0ADD00C6103D /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = C0435F851EEF0ADD00C6103D /* libz.tbd */; };
-		C06ABFF81F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h in Headers */ = {isa = PBXBuildFile; fileRef = C06ABFF71F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h */; };
-		C06ABFFA1F0ADEE700D1F60D /* NiFiSiteToSiteDatabasePrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = C06ABFF91F0ADEE700D1F60D /* NiFiSiteToSiteDatabasePrivate.h */; };
+		C06ABFF81F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h in Headers */ = {isa = PBXBuildFile; fileRef = C06ABFF71F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		C06ABFFA1F0ADEE700D1F60D /* NiFiSiteToSiteDatabaseFMDB.h in Headers */ = {isa = PBXBuildFile; fileRef = C06ABFF91F0ADEE700D1F60D /* NiFiSiteToSiteDatabaseFMDB.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		C06AC01C1F0D67F500D1F60D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06AC01B1F0D67F500D1F60D /* AppDelegate.swift */; };
 		C06AC01E1F0D67F500D1F60D /* WelcomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06AC01D1F0D67F500D1F60D /* WelcomeViewController.swift */; };
 		C06AC0201F0D67F500D1F60D /* QueuedViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06AC01F1F0D67F500D1F60D /* QueuedViewController.swift */; };
@@ -26,15 +30,14 @@
 		C074D52B1EE1C82400FF6787 /* s2s.h in Headers */ = {isa = PBXBuildFile; fileRef = C074D5291EE1C82400FF6787 /* s2s.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		C074D52E1EE1C82400FF6787 /* s2s.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C074D5271EE1C82400FF6787 /* s2s.framework */; };
 		C074D52F1EE1C82400FF6787 /* s2s.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C074D5271EE1C82400FF6787 /* s2s.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		C074D5351EE1C94D00FF6787 /* NiFiSiteToSiteClient.h in Headers */ = {isa = PBXBuildFile; fileRef = C074D5341EE1C94D00FF6787 /* NiFiSiteToSiteClient.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		C074D5351EE1C94D00FF6787 /* NiFiSiteToSite.h in Headers */ = {isa = PBXBuildFile; fileRef = C074D5341EE1C94D00FF6787 /* NiFiSiteToSite.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		C074D5371EE1C97200FF6787 /* NiFiSiteToSiteClient.m in Sources */ = {isa = PBXBuildFile; fileRef = C074D5361EE1C97200FF6787 /* NiFiSiteToSiteClient.m */; };
 		C074D5391EE1CDF000FF6787 /* NiFiHttpRestApiClient.h in Headers */ = {isa = PBXBuildFile; fileRef = C074D5381EE1CDF000FF6787 /* NiFiHttpRestApiClient.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		C074D53D1EE1E3D900FF6787 /* NiFiSiteToSiteClientPrivate.h in Headers */ = {isa = PBXBuildFile; fileRef = C074D53C1EE1E3D900FF6787 /* NiFiSiteToSiteClientPrivate.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		C074D53F1EE1E61200FF6787 /* NiFiHttpSiteToSiteClient.m in Sources */ = {isa = PBXBuildFile; fileRef = C074D53E1EE1E61200FF6787 /* NiFiHttpSiteToSiteClient.m */; };
 		C074D5411EE1EA7A00FF6787 /* NiFiHttpRestApiClient.m in Sources */ = {isa = PBXBuildFile; fileRef = C074D5401EE1EA7A00FF6787 /* NiFiHttpRestApiClient.m */; };
 		C07B8C5A1F04488800069647 /* NiFiSiteToSiteDatabaseTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C07B8C591F04488800069647 /* NiFiSiteToSiteDatabaseTests.m */; };
 		C07B8C5C1F056E6800069647 /* FMDB.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C07B8C5B1F056E6800069647 /* FMDB.framework */; };
 		C07B8C6A1F05741700069647 /* NiFiSiteToSiteDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = C07B8C691F05741700069647 /* NiFiSiteToSiteDatabase.m */; };
+		C0923D3C1F214B3400ACEE95 /* NiFiSiteToSiteClient.h in Headers */ = {isa = PBXBuildFile; fileRef = C0923D3B1F214B3400ACEE95 /* NiFiSiteToSiteClient.h */; };
 		C0D3608B1EF2F9C0008B1BB5 /* NiFiHttpRestApiClientTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C0D3608A1EF2F9C0008B1BB5 /* NiFiHttpRestApiClientTests.m */; };
 		C0D3609E1EF97854008B1BB5 /* NiFiError.h in Headers */ = {isa = PBXBuildFile; fileRef = C0D3609D1EF97854008B1BB5 /* NiFiError.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		C0D360A01EF97BA1008B1BB5 /* NiFiError.m in Sources */ = {isa = PBXBuildFile; fileRef = C0D3609F1EF97BA1008B1BB5 /* NiFiError.m */; };
@@ -47,7 +50,6 @@
 		C0DD292F1EE723FF00AD1B7A /* s2sTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C0DD292E1EE723FF00AD1B7A /* s2sTests.m */; };
 		C0DD29311EE723FF00AD1B7A /* s2s.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C074D5271EE1C82400FF6787 /* s2s.framework */; };
 		C0DD29381EEB9AD900AD1B7A /* NiFiDataPacket.m in Sources */ = {isa = PBXBuildFile; fileRef = C0DD29371EEB9AD900AD1B7A /* NiFiDataPacket.m */; };
-		C0E8DF821EF1A33700E8F1EF /* NiFiHttpSiteToSiteClient.h in Headers */ = {isa = PBXBuildFile; fileRef = C0E8DF811EF1A33700E8F1EF /* NiFiHttpSiteToSiteClient.h */; settings = {ATTRIBUTES = (Private, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -91,9 +93,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C0067D441F1E481C008C8A21 /* NiFiSiteToSiteConfig.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteConfig.m; sourceTree = "<group>"; };
+		C0067D461F1E69B2008C8A21 /* NiFiPeer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiPeer.m; sourceTree = "<group>"; };
+		C0067D481F1E6A30008C8A21 /* NiFiSiteToSiteUtil.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteUtil.m; sourceTree = "<group>"; };
+		C03B17461F20E6E8000731C6 /* NiFiSiteToSiteModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteModel.h; sourceTree = "<group>"; };
 		C0435F851EEF0ADD00C6103D /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		C06ABFF71F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteDatabase.h; sourceTree = "<group>"; };
-		C06ABFF91F0ADEE700D1F60D /* NiFiSiteToSiteDatabasePrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteDatabasePrivate.h; sourceTree = "<group>"; };
+		C06ABFF91F0ADEE700D1F60D /* NiFiSiteToSiteDatabaseFMDB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteDatabaseFMDB.h; sourceTree = "<group>"; };
 		C06AC0191F0D67F500D1F60D /* DemoSwift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DemoSwift.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C06AC01B1F0D67F500D1F60D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C06AC01D1F0D67F500D1F60D /* WelcomeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeViewController.swift; sourceTree = "<group>"; };
@@ -116,15 +122,14 @@
 		C074D5271EE1C82400FF6787 /* s2s.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = s2s.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C074D5291EE1C82400FF6787 /* s2s.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = s2s.h; sourceTree = "<group>"; };
 		C074D52A1EE1C82400FF6787 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		C074D5341EE1C94D00FF6787 /* NiFiSiteToSiteClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteClient.h; sourceTree = "<group>"; };
+		C074D5341EE1C94D00FF6787 /* NiFiSiteToSite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSite.h; sourceTree = "<group>"; };
 		C074D5361EE1C97200FF6787 /* NiFiSiteToSiteClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteClient.m; sourceTree = "<group>"; };
 		C074D5381EE1CDF000FF6787 /* NiFiHttpRestApiClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiHttpRestApiClient.h; sourceTree = "<group>"; };
-		C074D53C1EE1E3D900FF6787 /* NiFiSiteToSiteClientPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteClientPrivate.h; sourceTree = "<group>"; };
-		C074D53E1EE1E61200FF6787 /* NiFiHttpSiteToSiteClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiHttpSiteToSiteClient.m; sourceTree = "<group>"; };
 		C074D5401EE1EA7A00FF6787 /* NiFiHttpRestApiClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiHttpRestApiClient.m; sourceTree = "<group>"; };
 		C07B8C591F04488800069647 /* NiFiSiteToSiteDatabaseTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteDatabaseTests.m; sourceTree = "<group>"; };
 		C07B8C5B1F056E6800069647 /* FMDB.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FMDB.framework; path = Carthage/Build/iOS/FMDB.framework; sourceTree = "<group>"; };
 		C07B8C691F05741700069647 /* NiFiSiteToSiteDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteDatabase.m; sourceTree = "<group>"; };
+		C0923D3B1F214B3400ACEE95 /* NiFiSiteToSiteClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteClient.h; sourceTree = "<group>"; };
 		C0D3608A1EF2F9C0008B1BB5 /* NiFiHttpRestApiClientTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiHttpRestApiClientTests.m; sourceTree = "<group>"; };
 		C0D3609D1EF97854008B1BB5 /* NiFiError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiError.h; sourceTree = "<group>"; };
 		C0D3609F1EF97BA1008B1BB5 /* NiFiError.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiError.m; sourceTree = "<group>"; };
@@ -137,7 +142,6 @@
 		C0DD292E1EE723FF00AD1B7A /* s2sTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = s2sTests.m; sourceTree = "<group>"; };
 		C0DD29301EE723FF00AD1B7A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C0DD29371EEB9AD900AD1B7A /* NiFiDataPacket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiDataPacket.m; sourceTree = "<group>"; };
-		C0E8DF811EF1A33700E8F1EF /* NiFiHttpSiteToSiteClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiHttpSiteToSiteClient.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -253,21 +257,23 @@
 			isa = PBXGroup;
 			children = (
 				C074D5291EE1C82400FF6787 /* s2s.h */,
-				C0D3609D1EF97854008B1BB5 /* NiFiError.h */,
-				C074D5381EE1CDF000FF6787 /* NiFiHttpRestApiClient.h */,
-				C0E8DF811EF1A33700E8F1EF /* NiFiHttpSiteToSiteClient.h */,
-				C074D5341EE1C94D00FF6787 /* NiFiSiteToSiteClient.h */,
-				C074D53C1EE1E3D900FF6787 /* NiFiSiteToSiteClientPrivate.h */,
-				C06ABFF71F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h */,
-				C06ABFF91F0ADEE700D1F60D /* NiFiSiteToSiteDatabasePrivate.h */,
+				C074D5341EE1C94D00FF6787 /* NiFiSiteToSite.h */,
 				C0D360A91F01B6A3008B1BB5 /* NiFiSiteToSiteService.h */,
+				C0D3609D1EF97854008B1BB5 /* NiFiError.h */,
+				C03B17461F20E6E8000731C6 /* NiFiSiteToSiteModel.h */,
+				C0923D3B1F214B3400ACEE95 /* NiFiSiteToSiteClient.h */,
+				C074D5381EE1CDF000FF6787 /* NiFiHttpRestApiClient.h */,
+				C06ABFF71F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h */,
+				C06ABFF91F0ADEE700D1F60D /* NiFiSiteToSiteDatabaseFMDB.h */,
 				C0DD29371EEB9AD900AD1B7A /* NiFiDataPacket.m */,
+				C0067D461F1E69B2008C8A21 /* NiFiPeer.m */,
+				C0067D481F1E6A30008C8A21 /* NiFiSiteToSiteUtil.m */,
+				C0067D441F1E481C008C8A21 /* NiFiSiteToSiteConfig.m */,
 				C0D3609F1EF97BA1008B1BB5 /* NiFiError.m */,
 				C074D5401EE1EA7A00FF6787 /* NiFiHttpRestApiClient.m */,
-				C074D53E1EE1E61200FF6787 /* NiFiHttpSiteToSiteClient.m */,
 				C074D5361EE1C97200FF6787 /* NiFiSiteToSiteClient.m */,
-				C07B8C691F05741700069647 /* NiFiSiteToSiteDatabase.m */,
 				C0D360A71F01B675008B1BB5 /* NiFiSiteToSiteService.m */,
+				C07B8C691F05741700069647 /* NiFiSiteToSiteDatabase.m */,
 				C074D52A1EE1C82400FF6787 /* Info.plist */,
 			);
 			path = s2s;
@@ -293,15 +299,15 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C06ABFFA1F0ADEE700D1F60D /* NiFiSiteToSiteDatabasePrivate.h in Headers */,
 				C0D360AA1F01B6A3008B1BB5 /* NiFiSiteToSiteService.h in Headers */,
 				C0D3609E1EF97854008B1BB5 /* NiFiError.h in Headers */,
-				C074D5351EE1C94D00FF6787 /* NiFiSiteToSiteClient.h in Headers */,
+				C074D5351EE1C94D00FF6787 /* NiFiSiteToSite.h in Headers */,
 				C074D52B1EE1C82400FF6787 /* s2s.h in Headers */,
-				C06ABFF81F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h in Headers */,
-				C074D53D1EE1E3D900FF6787 /* NiFiSiteToSiteClientPrivate.h in Headers */,
+				C0923D3C1F214B3400ACEE95 /* NiFiSiteToSiteClient.h in Headers */,
 				C074D5391EE1CDF000FF6787 /* NiFiHttpRestApiClient.h in Headers */,
-				C0E8DF821EF1A33700E8F1EF /* NiFiHttpSiteToSiteClient.h in Headers */,
+				C06ABFF81F0ADE9800D1F60D /* NiFiSiteToSiteDatabase.h in Headers */,
+				C06ABFFA1F0ADEE700D1F60D /* NiFiSiteToSiteDatabaseFMDB.h in Headers */,
+				C03B17471F20E6E8000731C6 /* NiFiSiteToSiteModel.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -514,12 +520,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				C074D5371EE1C97200FF6787 /* NiFiSiteToSiteClient.m in Sources */,
+				C0067D491F1E6A30008C8A21 /* NiFiSiteToSiteUtil.m in Sources */,
 				C0D360A01EF97BA1008B1BB5 /* NiFiError.m in Sources */,
+				C0067D451F1E481C008C8A21 /* NiFiSiteToSiteConfig.m in Sources */,
 				C0D360A81F01B675008B1BB5 /* NiFiSiteToSiteService.m in Sources */,
 				C074D5411EE1EA7A00FF6787 /* NiFiHttpRestApiClient.m in Sources */,
 				C07B8C6A1F05741700069647 /* NiFiSiteToSiteDatabase.m in Sources */,
-				C074D53F1EE1E61200FF6787 /* NiFiHttpSiteToSiteClient.m in Sources */,
 				C0DD29381EEB9AD900AD1B7A /* NiFiDataPacket.m in Sources */,
+				C0067D471F1E69B2008C8A21 /* NiFiPeer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -18,8 +18,15 @@
 #ifndef NiFiHttpRestApiClient_h
 #define NiFiHttpRestApiClient_h
 
+/* Visibility: Internal / Private
+ *
+ * This header declares classes and functionality that is only for use
+ * internally in the site to site library implementation and not designed
+ * for users of the site to site library.
+ */
+
 #import <Foundation/Foundation.h>
-#import "NiFiSiteToSiteClientPrivate.h"
+#import "NiFiSiteToSiteModel.h"
 
 // A protocol for Apple's NSURLSession, a dependecy of NiFiHttpRestApiClient
 // This protocol is used to inject stubs/mocks in testing.
@@ -53,11 +60,12 @@
 
 - (nullable NSURL *)baseUrl;
 
+- (nullable NSDictionary *)getRemoteInputPortsOrError:(NSError *_Nullable *_Nullable)error;
+
+- (nullable NSArray<NiFiPeer *> *)getPeersOrError:(NSError *_Nullable *_Nullable)error;
+
 - (nullable NiFiTransactionResource *)initiateSendTransactionToPortId:(nonnull NSString *)portId
                                                                 error:(NSError *_Nullable *_Nullable)error;
-
-- (nullable NSString *)getPortIdForPortName:(nonnull NSString *)portName
-                                      error:(NSError *_Nullable *_Nullable)error;
 
 - (void)extendTTLForTransaction:(nonnull NSString *)transactionUrl error:(NSError *_Nullable *_Nullable)error;
 

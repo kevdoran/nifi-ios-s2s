@@ -17,7 +17,7 @@
 
 #import <Foundation/Foundation.h>
 #import <zlib.h>
-#import "NiFiSiteToSiteClientPrivate.h"
+#import "NiFiSiteToSiteClient.h"
 
 /********** NiFiDataPacket Class Cluster Implementation **********/
 

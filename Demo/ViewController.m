@@ -34,18 +34,17 @@
     [super viewDidLoad];
     [[self view] setBackgroundColor:[UIColor colorWithRed:217.0f/255.0f green:217.0f/255.0f blue:217.0f/255.0f alpha:1.0]];
     
-    // Rather than hardcoded here, this could be loaded from a .plist resource file or similar
-    NiFiSiteToSiteClientConfig * s2sConfig = [[NiFiSiteToSiteClientConfig alloc] init];
-    s2sConfig.transportProtocol = HTTP;
-    s2sConfig.host = @"localhost";
-    s2sConfig.port = [NSNumber numberWithInt:8080];
-    s2sConfig.portName = @"From iOS";
-    s2sConfig.secure = true;
-    s2sConfig.username = @"admin";
-    s2sConfig.password = @"admin-password";
-    
+    // NiFi config. Note, rather than hardcoded here, this could be loaded from another config source, e.g., a .plist resource file or UserDefaults
+    NiFiSiteToSiteRemoteClusterConfig *remoteNiFiInstance =
+        [NiFiSiteToSiteRemoteClusterConfig configWithUrl:[NSURL URLWithString:@"http://localhost:8080"]];
+    // credentials
+    // remoteNiFiInstance.username = @"admin";
+    // remoteNiFiInstance.password = @"admin-password";
     // add a url session delegate that handles custom server TLS chain validation (not needed for cert signed by root CA)
-    s2sConfig.urlSessionDelegate = [[URLSessionAuthenticatorDelegate alloc] init];
+    // remoteNiFiInstance.urlSessionDelegate = [[URLSessionAuthenticatorDelegate alloc] init];
+    
+    NiFiSiteToSiteClientConfig *s2sConfig = [NiFiSiteToSiteClientConfig configWithRemoteCluster: remoteNiFiInstance];
+    s2sConfig.portName = @"From iOS";
     
     _totalFlowFileCount = 0;
     _s2sClient = [NiFiSiteToSiteClient clientWithConfig:s2sConfig];
@@ -68,7 +67,7 @@
         return;
     }
     
-    // Create Site-to-Site Transaction
+    // Create Site-to-Site Transactionh
     id transaction = [_s2sClient createTransaction];
     
     // Send Data Packet(s) over Transaction

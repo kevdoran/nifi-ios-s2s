@@ -17,7 +17,7 @@
 
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
-#import "NiFiSiteToSiteDatabasePrivate.h"
+#import "NiFiSiteToSiteDatabaseFMDB.h"
 
 
 @interface NiFiSiteToSiteDatabaseTests : XCTestCase

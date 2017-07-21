@@ -73,9 +73,9 @@
 }
 
 
-- (void)application:(UIApplication *)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
-  // Implement this to give the app background site-to-site batch processing opportunities
-}
+//- (void)application:(UIApplication *)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
+//  // Implement this to give the app background site-to-site batch processing opportunities
+//}
 
 
 @end

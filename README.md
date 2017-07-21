@@ -41,10 +41,9 @@ The included XCode project case also be opened in the XCode IDE, as its own stan
 Here is a basic usage example of the s2s Cocoa Framework from Objective-C.
 
 ```objective-c
-NiFiSiteToSiteClientConfig * s2sConfig = [[NiFiSiteToSiteClientConfig alloc] init];
-s2sConfig.transportProtocol = HTTP;
-s2sConfig.host = @"localhost";
-s2sConfig.port = [NSNumber numberWithInt:8080];
+NiFiSiteToSiteRemoteClusterConfig *remoteNiFiInstance =
+    [NiFiSiteToSiteRemoteClusterConfig configWithUrl:[NSURL URLWithString:@"http://localhost:8080"]];
+NiFiSiteToSiteClientConfig *s2sConfig = [NiFiSiteToSiteClientConfig configWithRemoteCluster: remoteNiFiInstance];
 s2sConfig.portName = @"From iOS";
 
 id s2sClient = [NiFiSiteToSiteClient clientWithConfig:s2sConfig];
@@ -85,8 +84,7 @@ Below are basic usage examples of the s2s Cocoa Framework as a module in Swift.
 
 ```swift
 let s2sClientConfig = NiFiSiteToSiteClientConfig()
-s2sClientConfig.host = "localhost"
-s2sClientConfig.port = 8080
+s2sClientConfig.addRemoteCluster(NiFiSiteToSiteRemoteClusterConfig(url: URL(string: "http://localhost:8080")))
 s2sConfig.portName = "From iOS";
 
 let s2sClient = NiFiSiteToSiteClient(config: s2sClientConfig)
@@ -114,8 +112,7 @@ do {
 #### Send asynchronously
 ```swift
 let s2sClientConfig = NiFiSiteToSiteClientConfig()
-s2sClientConfig.host = "localhost"
-s2sClientConfig.port = 8080
+s2sClientConfig.addRemoteCluster(NiFiSiteToSiteRemoteClusterConfig(url: URL(string: "http://localhost:8080")))
 s2sConfig.portName = "From iOS";
 
 let data1 = NiFiDataPacket(attributes: ["packetNumber": "1"],
@@ -140,8 +137,8 @@ import s2s
 
 // Early in the app, configure and store this somewhere
 let s2sClientConfig = NiFiQueuedSiteToSiteClientConfig()
-s2sClientConfig.host = "localhost"
-s2sClientConfig.port = 8080
+s2sClientConfig.addRemoteCluster(NiFiSiteToSiteRemoteClusterConfig(url: URL(string: "http://localhost:8080")))
+s2sConfig.portName = "From iOS";
 s2sConfig.portName = "From iOS";
 s2sClientConfig.dataPacketPrioritizer = NiFiNoOpDataPacketPrioritizer(fixedTTL: 60.0)
 
@@ -181,6 +178,8 @@ To run one of the demo apps, select 'DemoSwift' or 'Demo' as the active scheme i
 
 ## Security
 
+### Server Identity
+
 The S2S Framework can use TLS when communicating to a NiFI server, provided the NiFi server is 
 configured for secure communication.
 
@@ -188,7 +187,13 @@ If a NiFi server is using a certificate signed by a [trusted root Certificate Au
 all that is required is to configure the site-to-site client with the option `secure=true`. HTTPS will be used as the 
 transport protocol.
 
-If the NiFi server is using a self-signed certificate, or your app needs to perform nonstandard TLS chain validation for some other reason, there is more you must do to make the system trust the CA. The s2s framework uses Apple's NSURL family of APIs internally (i.e., NSURLSession), therefore, in order to provide custom TLS chain validation your app must implement a URLSessionDelegate that overrides the function [URLSession:didReceiveChallenge:completionHandler:](https://developer.apple.com/documentation/foundation/nsurlsessiondelegate/1409308-urlsession). Within your authentication handler delegate method, you should check to see if the challenge protection space has an authentication type of NSURLAuthenticationMethodServerTrust, and if so, obtain the serverTrust information from that protection space. 
+If the NiFi server is using a self-signed certificate (e.g., a test environment), or your app needs to perform nonstandard TLS chain validation for some other reason, 
+there is more you must do to make the system trust the CA. It is recommended you add that authority's trust anchor as described at the bottom of the [Apple Secure Networking Guide](https://developer.apple.com/library/content/documentation/NetworkingInternetWeb/Conceptual/NetworkingOverview/SecureNetworking/SecureNetworking.html).
+Alternatively, although not a recommended practice, you can override TLS chain validation with custom logic. The s2s framework uses Apple's NSURL family of APIs internally (i.e., NSURLSession), therefore, in order 
+to provide custom TLS chain validation your app must implement a URLSessionDelegate that overrides the 
+function [URLSession:didReceiveChallenge:completionHandler:](https://developer.apple.com/documentation/foundation/nsurlsessiondelegate/1409308-urlsession). Within 
+your authentication handler delegate method, you should check to see if the challenge protection space has an authentication type of NSURLAuthenticationMethodServerTrust,
+ and if so, obtain the serverTrust information from that protection space. 
 
 An example of this is provided in DemoSwift's [AppNetworking.swift](DemoSwift/AppNetworking.swift) file.
 
@@ -196,8 +201,23 @@ For more information, see "Performing Custom TLS Chain Validation" in [Apple's U
 
 * [Apple Technical Note TN2232: HTTPS Server Trust Evaluation](https://developer.apple.com/library/content/technotes/tn2232/_index.html)
 * [iOS Networking Topics > Overriding TLS Chain Validation Correctly](https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/NetworkingTopics/Articles/OverridingSSLChainValidationCorrectly.html)
+* [Apple Secure Networking Guide](https://developer.apple.com/library/content/documentation/NetworkingInternetWeb/Conceptual/NetworkingOverview/SecureNetworking/SecureNetworking.html)
 
-Client authentication to the NiFi server is currently supported via username and password credentials, which can be specified in the site-to-site client configuration.
+### Client Identity
+
+Client authentication to the NiFi server is supported in two ways:
+
+* Username and password credentials, which can be specified in the site-to-site client configuration.
+* Client certificate for two-way TLS.
+
+For client certificate authentication, you must provide a client certificate and implement a URLSessionDelegate that responds to the server's TLS handshake challenge by providing a client certification as 
+described in [Apple's URL Session Programming Guide](https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/URLLoadingSystem/Articles/AuthenticationChallenges.html).
+
+Note that due to a limitation of Apple's iOS platform, client certificate authentication is not compatible with background network tasks, 
+as they are performed by a system process, and Apple's platform currently does not allow passing client credentials between processes.
+Therefore, if your app requires to make use of the s2s module in the background, it is recommended you use username/password client credentials, which
+are utilized in the library to communicate with the server to create an authentication token for site-to-site communication. For more information on
+this limitation of Apple's iOS platform, see: https://forums.developer.apple.com/thread/28713
 
 ## FAQ and Troubleshooting
 

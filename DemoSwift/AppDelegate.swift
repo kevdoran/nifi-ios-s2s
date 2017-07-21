@@ -61,12 +61,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // Default config. Only gets used if these values have not been set by the user.
         let s2sConfigDefaults = [
-            "nifi.s2s.config.host": "localhost",
-            "nifi.s2s.config.port": 32768,
+            "nifi.s2s.config.cluster.url": "http://localhost:8080",
+//            "nifi.s2s.config.cluster.username": "admin",
+//            "nifi.s2s.config.cluster.password": "admin-password",
             "nifi.s2s.config.portName": "From iOS",
-            "nifi.s2s.config.secure": true,
-            "nifi.s2s.config.secure.username": "admin",
-            "nifi.s2s.config.secure.password": "admin-password",
             "nifi.s2s.config.queued.max_queued_packet_count": 1000,
             "nifi.s2s.config.queued.max_queued_packet_size": INT_MAX, // disabled
             "nifi.s2s.config.queued.preferred_batch_size": 0, // disabled
