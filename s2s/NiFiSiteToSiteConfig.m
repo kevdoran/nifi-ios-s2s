@@ -137,6 +137,7 @@
         _remoteClusters = [[NSMutableArray<NiFiSiteToSiteRemoteClusterConfig *> alloc] init];
         _portName = nil;
         _portId = nil;
+        _timeout = 30.0;
         _peerUpdateInterval = 0.0;
     }
     return self;
@@ -151,6 +152,7 @@
     }
     ((NiFiSiteToSiteClientConfig *)copy).portName = _portName ? [_portName copyWithZone:zone] : nil;
     ((NiFiSiteToSiteClientConfig *)copy).portId = _portId ? [_portId copyWithZone:zone] : nil;
+    ((NiFiSiteToSiteClientConfig *)copy).timeout = _timeout;
     ((NiFiSiteToSiteClientConfig *)copy).peerUpdateInterval = _peerUpdateInterval;
     
     return copy;

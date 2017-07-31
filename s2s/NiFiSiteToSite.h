@@ -26,11 +26,11 @@
 #import <Foundation/Foundation.h>
 
 
-// MARK: - Enums -
+// MARK: - Enums
 
 typedef enum {
     HTTP,
-    // RAW_SOCKET, // TODO, there is also the socket variant of the NiFi Site-to-Site protocol that could be implemented if needed
+    TCP_SOCKET
 } NiFiSiteToSiteTransportProtocol;
 
 
@@ -45,7 +45,7 @@ typedef enum {
 
 
 
-// MARK: - Config Classes -
+// MARK: - Config Classes
 
 @interface NiFiSiteToSiteRemoteClusterConfig : NSObject <NSCopying>
 @property (nonatomic, retain, readwrite, nonnull) NSMutableSet<NSURL *> *urls;
@@ -54,6 +54,11 @@ typedef enum {
 @property (nonatomic, retain, readwrite, nullable) NSString *password;  // optional NiFi user credentials for two-way auth
 @property (nonatomic, retain, readwrite, nullable) NSURLSessionConfiguration *urlSessionConfiguration;  // optional URLSessionConfiguration to use
 @property (nonatomic, retain, readwrite, nullable) NSObject <NSURLSessionDelegate> *urlSessionDelegate;  // optional URLSessionDelegate to use
+@property (nonatomic, retain, readwrite, nullable) NSDictionary *socketTLSSettings; // optional, only read if transportProtocol = TCP_SOCKET
+                                                                                    // internally, s2s uses the CFStream APIs, so the dictionary
+                                                                                    // to use here is the same one documented for kCFStreamPropertySSLSetings:
+                                                                                    // https://developer.apple.com/documentation/cfnetwork/kcfstreampropertysslsettings
+                                                                                    // https://developer.apple.com/documentation/corefoundation/cfstream/cfstream_property_ssl_settings_constants
 + (nullable instancetype) configWithUrl:(nonnull NSURL *)url;
 + (nullable instancetype) configWithUrls:(nonnull NSMutableSet<NSURL *> *)urls;
 - (void) addUrl:(nonnull NSURL *)url;
@@ -69,6 +74,7 @@ typedef enum {
 @property (nonatomic, retain, readwrite, nonnull) NSString *portId;    // ID of S2S input port at the server's configured flow
                                                                        // to which to send flow files.
                                                                        // Optional, not needed if portName is set.
+@property (nonatomic, readwrite) NSTimeInterval timeout;               // Client-side timeout when communicating with peer. Defaults to 30 seconds.
 @property (nonatomic, readwrite) NSTimeInterval peerUpdateInterval;    // Update interval for refreshing peer list if remote is a multi-instance NiFi cluster. Set to 0 to disable. Defaults to 0 (disabled)
 + (nullable instancetype) configWithRemoteCluster:(nonnull NiFiSiteToSiteRemoteClusterConfig *)remoteClusterConfig;
 + (nullable instancetype) configWithRemoteClusters:(nonnull NSArray<NiFiSiteToSiteRemoteClusterConfig *> *)remoteClusterConfigs;
@@ -78,7 +84,7 @@ typedef enum {
 
 
 
-// MARK: - SiteToSite Client, DataPacket, Transaction -
+// MARK: - SiteToSite Client, DataPacket, Transaction
 
 @interface NiFiDataPacket : NSObject
 
@@ -103,13 +109,14 @@ typedef enum {
 @interface NiFiPeer : NSObject
 
 @property (nonatomic, retain, readwrite, nonnull) NSURL *url;
-// @property (nonatomic, readwrite) NSUInteger rawPort;
-// @property (nonatomic, readwrite) BOOL secure;
+@property (nonatomic, retain, readwrite, nullable) NSNumber *rawPort; // if peer supports raw socket protocol, this should be set to the port used for that protocol
+@property (nonatomic, readwrite) BOOL rawIsSecure; // if peer supports raw socket protocol, should SSL be used for raw socket protocol/
 @property (nonatomic, readwrite) NSUInteger flowFileCount;
 @property (nonatomic, readwrite) NSTimeInterval lastFailure; // TimeIntervalSinceReferenceDate, should be updated using markFailure
 
 + (nullable instancetype)peerWithUrl:(nonnull NSURL *)url;
-//+ (nullable instancetype)peerWithUrl:(nonnull NSURL *)url rawPort:(NSUInteger)rawPort secure:(BOOL)isSecure;
++ (nullable instancetype)peerWithUrl:(nonnull NSURL *)url rawPort:(nullable NSNumber *)rawPort rawIsSecure:(BOOL)secure;
+- (nullable instancetype)initWithUrl:(nonnull NSURL *)url rawPort:(nullable NSNumber *)rawPort rawIsSecure:(BOOL)secure;
 
 - (void)markFailure;
 
@@ -138,7 +145,7 @@ typedef enum {
 - (void)cancel; // cancel the transaction
 - (void)error;  // mark the transaction as having encountered an error
 - (nullable NiFiTransactionResult *)confirmAndCompleteOrError:(NSError *_Nullable *_Nullable)error;
-- (nullable NiFiPeer *)getCommunicant;
+- (nullable NiFiPeer *)getPeer;
 @end
 
 
@@ -146,14 +153,6 @@ typedef enum {
 + (nonnull instancetype)clientWithConfig:(nonnull NiFiSiteToSiteClientConfig *)config;
 - (nullable NSObject <NiFiTransaction> *)createTransaction;
 - (nullable NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *_Nonnull)urlSession;
-@end
-
-
-
-// MARK: - SiteToSite Util -
-
-@interface NiFiSiteToSiteUtil : NSObject
-+ (nonnull NSString *)NiFiTransactionStateToString:(NiFiTransactionState)state;
 @end
 
 

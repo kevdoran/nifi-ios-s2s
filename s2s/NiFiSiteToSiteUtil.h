@@ -15,20 +15,25 @@
  * See the associated NOTICE file for additional information regarding copyright ownership.
  */
 
-import UIKit
 
-class SettingsViewController: UIViewController {
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-    
-    
-}
+#ifndef NiFiSiteToSiteUtil_h
+#define NiFiSiteToSiteUtil_h
 
+/* Visibility: Internal / Private
+ *
+ * This header declares classes and functionality that is only for use
+ * internally in the site to site library implementation and not designed
+ * for users of the site to site library.
+ *
+ */
+
+#import <Foundation/Foundation.h>
+#import "NiFiSiteToSite.h"
+
+// MARK: - SiteToSite Util
+
+@interface NiFiSiteToSiteUtil : NSObject
++ (nonnull NSString *)NiFiTransactionStateToString:(NiFiTransactionState)state;
+@end
+
+#endif /* NiFiSiteToSiteUtil_h */

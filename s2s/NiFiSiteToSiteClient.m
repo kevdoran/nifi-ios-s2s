@@ -20,6 +20,14 @@
 #import "NiFiSiteToSiteConfig.h"
 #import "NiFiSiteToSiteClient.h"
 #import "NiFiHttpRestApiClient.h"
+#import "NiFiSiteToSiteUtil.h"
+#import "NiFiSiteToSiteTransaction.h"
+#import "NiFiDataPacket.h"
+#import "NiFiSocket.h"
+#import "NiFiError.h"
+
+
+#define MSEC_PER_SEC 1000
 
 // MARK: - SiteToSite Internal Interface Extentensions
 
@@ -41,6 +49,9 @@
 
 
 @interface NiFiHttpSiteToSiteClient : NiFiSiteToSiteUniClusterClient
+@end
+
+@interface NiFiSocketSiteToSiteClient : NiFiSiteToSiteUniClusterClient
 @end
 
 
@@ -109,6 +120,9 @@
             case HTTP:
                 client = [[NiFiHttpSiteToSiteClient alloc] initWithConfig:self.config remoteCluster:clusterConfig];
                 break;
+            case TCP_SOCKET:
+                client = [[NiFiSocketSiteToSiteClient alloc] initWithConfig:self.config remoteCluster:clusterConfig];
+                break;
             default:
                 @throw [NSException
                         exceptionWithName:NSGenericException
@@ -141,6 +155,61 @@
 
 
 // MARK: - SiteToSiteClient Implementation
+
+@implementation NiFiTransaction
+
+- (instancetype) initWithPeer:(NiFiPeer *)peer {
+    self = [super init];
+    if(self != nil) {
+        _peer = peer;
+        _startTime = [NSDate date];
+        _transactionState = TRANSACTION_STARTED;
+        _dataPacketEncoder = [[NiFiDataPacketEncoder alloc] init];
+    }
+    return self;
+}
+
+- (nonnull NSString *)transactionId {
+    @throw [NSException
+            exceptionWithName:NSInternalInconsistencyException
+            reason:[NSString stringWithFormat:@"You must override %@ in a subclass", NSStringFromSelector(_cmd)]
+            userInfo:nil];
+}
+
+- (NiFiTransactionState)transactionState {
+    return _transactionState;
+}
+
+- (void)sendData:(nonnull NiFiDataPacket *)data {
+    [self.dataPacketEncoder appendDataPacket:data];
+    self.transactionState = DATA_EXCHANGED;
+}
+
+- (void)cancel {
+    self.transactionState = TRANSACTION_CANCELED;
+    // subclasses can implement cancel interaction with server
+}
+
+- (void)error {
+    if (self.peer) {
+        [self.peer markFailure];
+    }
+    self.transactionState = TRANSACTION_ERROR;
+}
+
+- (nullable NiFiTransactionResult *)confirmAndCompleteOrError:(NSError *_Nullable *_Nullable)error {
+    @throw [NSException
+            exceptionWithName:NSInternalInconsistencyException
+            reason:[NSString stringWithFormat:@"You must override %@ in a subclass", NSStringFromSelector(_cmd)]
+            userInfo:nil];
+}
+
+- (nullable NiFiPeer *)getPeer {
+    return self.peer;
+}
+
+@end
+
 
 @implementation NiFiSiteToSiteClient
 
@@ -428,20 +497,17 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
 - (nonnull instancetype) initWithPortId:(nonnull NSString *)portId
                       httpRestApiClient:(nonnull NiFiHttpRestApiClient *)restApiClient
                                    peer:(nullable NiFiPeer *)peer {
-    self = [super init];
-    if(self != nil) {
+    self = [super initWithPeer:peer];
+    if (self != nil) {
         _restApiClient = restApiClient;
-        _peer = peer;
         NSError *error;
         _transactionResource = [_restApiClient initiateSendTransactionToPortId:portId error:&error];
         if (_transactionResource) {
-            _startTime = [NSDate date];
-            _transactionState = TRANSACTION_STARTED;
-            _shouldKeepAlive = true;
+            self.shouldKeepAlive = true;
             [self scheduleNextKeepAliveWithTTL:(_transactionResource.serverSideTtl)];
-            _dataPacketEncoder = [[NiFiDataPacketEncoder alloc] init];
         } else {
             NSLog(@"ERROR  %@", [error localizedDescription]);
+            [self error];
             self = nil;
         }
     }
@@ -449,89 +515,65 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
 }
 
 - (NSString *)transactionId {
-    return _transactionResource.transactionId;
+    return self.transactionResource.transactionId;
 }
 
 - (void) sendData:(NiFiDataPacket *)data {
-    [_dataPacketEncoder appendDataPacket:data];
-    _transactionState = DATA_EXCHANGED;
+    [super sendData:data]; /* NiFiTransaction */
 }
 
 - (void) cancel {
-    [self cancelWithExplaination:@""];
-}
-
-- (void) cancelWithExplaination: (nonnull NSString *)explaination {
+    [super cancel]; /* NiFiTransaction */
     NSError *error;
-    _transactionState = TRANSACTION_CANCELED;
-    _shouldKeepAlive = false;
+    self.shouldKeepAlive = false;
     [_restApiClient endTransaction:_transactionResource.transactionUrl responseCode:CANCEL_TRANSACTION error:&error];
 }
 
 - (void) error {
-    if (_peer) {
-        [_peer markFailure];
-    }
-    _transactionState = TRANSACTION_ERROR;
-    _shouldKeepAlive = false;
+    [super error];
+    self.shouldKeepAlive = false;
 }
 
 - (nullable NiFiTransactionResult *)confirmAndCompleteOrError:(NSError *_Nullable *_Nullable)error {
-    [self confirmOrError:error];
-    if (error && *error) {
-        return nil;
-    } else {
-        return [self completeOrError:error];
-    }
-}
-
-- (void) confirmOrError:(NSError *_Nullable *_Nullable)error {
-    NSUInteger serverCrc = [_restApiClient sendFlowFiles:_dataPacketEncoder
-                                         withTransaction:_transactionResource
-                                                   error:error];
     
-    NSUInteger expectedCrc = [_dataPacketEncoder getEncodedDataCrcChecksum];
+    // 1. Send encoded flow file data
+    NSUInteger serverCrc = [self.restApiClient sendFlowFiles:self.dataPacketEncoder
+                                             withTransaction:self.transactionResource
+                                                       error:error];
     
-    NSLog(@"NiFi Peer returned CRC code: %ld, expected CRC was: %ld", (unsigned long)serverCrc, (unsigned long)expectedCrc);
+    NSUInteger expectedCrc = [self.dataPacketEncoder getEncodedDataCrcChecksum];
+    
+    NSLog(@"NiFi Peer returned CRC code: %ld, expected CRC was: %ld",
+          (unsigned long)serverCrc, (unsigned long)expectedCrc);
     
     if (serverCrc != expectedCrc) {
-        [_restApiClient endTransaction:_transactionResource.transactionUrl responseCode:BAD_CHECKSUM error:error];
-        [self error];
-    }
-    else {
-        _transactionState = TRANSACTION_CONFIRMED;
-        // The endTransaction communication to server is sent from the complete() function
-    }
-}
-
-- (nullable NiFiTransactionResult *)completeOrError:(NSError *_Nullable *_Nullable)error {
-    // Must be called after confirm interacton is done.
-    if (![[self class] assertExpectedState:TRANSACTION_CONFIRMED equalsActualState:_transactionState]) {
-        [self error];
-    }
-    
-    NiFiTransactionResult *transactionResult = [_restApiClient endTransaction:_transactionResource.transactionUrl
-                                                                 responseCode:CONFIRM_TRANSACTION
-                                                                        error:error];
-    if (error && *error) {
+        [self.restApiClient endTransaction:self.transactionResource.transactionUrl
+                              responseCode:BAD_CHECKSUM
+                                     error:error];
         [self error];
         return nil;
-    } else {
-        _transactionState = TRANSACTION_COMPLETED;
-        transactionResult.duration = [[NSDate date] timeIntervalSinceDate:_startTime];
-        _shouldKeepAlive = false;
-        return transactionResult;
     }
+    
+    self.transactionState = TRANSACTION_CONFIRMED;
+    
+    NiFiTransactionResult *transactionResult = [self.restApiClient endTransaction:self.transactionResource.transactionUrl
+                                                                     responseCode:CONFIRM_TRANSACTION
+                                                                            error:error];
+    if ((error && *error) || !transactionResult) {
+        [self error];
+        return nil;
+    }
+    self.transactionState = TRANSACTION_COMPLETED;
+    transactionResult.duration = [[NSDate date] timeIntervalSinceDate:self.startTime];
+    NSLog(@"Completed transaction. flowfiles_sent=%llu, transactionId=%@", transactionResult.dataPacketsTransferred, [self transactionId]);
+    self.shouldKeepAlive = false;
+    return transactionResult;
 }
 
-- (nullable NiFiPeer *)getCommunicant {
-    NiFiPeer *peer = [NiFiPeer peerWithUrl:[_restApiClient baseUrl]];
-    return peer;
-}
 
 - (void)scheduleNextKeepAliveWithTTL:(NSTimeInterval)ttl {
     // schedule another keep alive if needed
-    if (_shouldKeepAlive) {
+    if (self.shouldKeepAlive) {
         NSLog(@"Scheduling background task to extend transaction TTL");
         dispatch_time_t nextKeepAlive = dispatch_time(DISPATCH_TIME_NOW, (ttl / 2) * NSEC_PER_SEC);
         dispatch_after(nextKeepAlive, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(void){
@@ -563,6 +605,7 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
 @implementation NiFiHttpSiteToSiteClient
 
 - (nullable NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *)urlSession {
+    
     NiFiPeer *peer = [self getPreferredPeer];
     
     NiFiHttpRestApiClient *restApiClient = [self createRestApiClientWithBaseUrl:peer.url
@@ -593,8 +636,495 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
     return transaction;
 }
 
+@end
+
+
+
+// MARK: SocketSiteToSiteClient Implementation
+
+static const Byte MAGIC_BYTES[] = {'N', 'i', 'F', 'i'};
+static const int MAGIC_BYTES_LEN = 4;
+
+typedef enum {
+    TagNone,
+    TagMagicBytesWrite,
+    TagProtocolHandshakeWrite,
+    TagProtocolHandshakeRead,
+    TagResponseCodeRead,
+} NiFiSocketGCDTags;
+
+@interface NiFiSocketTransaction ()
+@property (nonatomic, retain, readwrite, nonnull) NSString *transactionId;
+@property (nonatomic, retain, readwrite, nonnull) NiFiSiteToSiteClientConfig *config;
+@property (nonatomic, retain, readwrite, nonnull) NiFiSocket *socket;
+@property NSInteger protocolVersion;
+@property BOOL firstPacketSend;
+@end
+
+
+@implementation NiFiSocketTransaction
+
+- (nonnull instancetype) initWithConfig:(nonnull NiFiSiteToSiteClientConfig *)config
+                    remoteClusterConfig:(nonnull NiFiSiteToSiteRemoteClusterConfig *)remoteCluster
+                                   peer:(nonnull NiFiPeer *)peer
+                                 portId:(nonnull NSString *)portId {
+    self = [super initWithPeer:peer];
+    if (self) {
+        self.firstPacketSend = YES;
+        self.transactionId = [[NSUUID UUID] UUIDString];
+        self.config = config;
+        self.peer = peer;
+        uint32_t port = self.peer.rawPort ? [self.peer.rawPort unsignedIntValue] : 0;
+        if (!port) {
+            NSLog(@"Cannot create socket sitetosite connection without raw port configured for peer.");
+            return nil;
+        }
+        
+        NSError *socketError;
+        _socket = [NiFiSocket socket];
+        NSLog(@"Establishing socket connection. host=%@, port=%i", peer.url.host, port);
+        if ([_socket connectToHost:peer.url.host onPort:port error:&socketError]) {
+            
+            if (remoteCluster.socketTLSSettings) {
+                [_socket startTLS:remoteCluster.socketTLSSettings];
+            }
+            
+            [_socket writeData:[NSData dataWithBytes:MAGIC_BYTES length:MAGIC_BYTES_LEN] withTimeout:self.config.timeout callback:nil];
+            
+            NSInteger clientProtocolVersions[] = {6, 5, 4, 3, 2, 1};
+            self.protocolVersion = [self negotiateProtocolVersion:clientProtocolVersions len:6];
+            [self protocolHandshake:self.protocolVersion portId:portId];
+            
+            NSInteger clientCodecVersions[] = {1};
+            NSInteger codecVersion = [self negotiateFlowFileCodecVersion:clientCodecVersions len:1];
+            if (codecVersion != 1) {
+                NSLog(@"NiFi Peer does not support a compatible Flow File Codec Version as this SiteToSite client.");
+            }
+            
+            [_socket writeData:[[self class] javaUTFDataForString:@"SEND_FLOWFILES"] withTimeout:self.config.timeout callback:nil];
+        } else {
+            NSLog(@"Error with socket s2s configuration.");
+            self = nil;
+        }
+    }
+    return self;
+}
+
+- (NSInteger) negotiateProtocolVersion:(NSInteger[])prioritizedVersions
+                                   len:(NSInteger)prioritizedVersionsLength {
+    return [self negotiateVersionForResource:@"SocketFlowFileProtocol"
+                         prioritizedVersions:prioritizedVersions
+                                         len:prioritizedVersionsLength];
+}
+
+- (NSInteger) negotiateFlowFileCodecVersion:(NSInteger[])prioritizedVersions
+                                        len:(NSInteger)prioritizedVersionsLength {
+    [_socket writeData:[[self class] javaUTFDataForString:@"NEGOTIATE_FLOWFILE_CODEC"] withTimeout:self.config.timeout callback:nil];
+    return [self negotiateVersionForResource:@"StandardFlowFileCodec"
+                         prioritizedVersions:prioritizedVersions
+                                         len:prioritizedVersionsLength];
+}
+
+static const int RESOURCE_OK_CODE = 20;
+static const int DIFFERENT_RESOURCE_VERSION_CODE = 21;
+static const int ABORT_CODE = 255;
+
+- (NSInteger) negotiateVersionForResource:(NSString *)resourceKey
+                      prioritizedVersions:(NSInteger[])versions
+                                      len:(NSInteger)versionsLength {
+    
+    NSInteger negotiatedVersion = -1;
+    int32_t serverMaxVersion = INT_MAX; // we don't know until we as the server,
+                                        // so for now assume the server supports any version of this resource
+    
+    for (int i=0; i < versionsLength; i++) {
+        
+        int32_t clientRequestedVersion = (int32_t)versions[i];
+        if (clientRequestedVersion < serverMaxVersion) {
+            NSLog(@"Negotiating '%@' version with peer. version=%i", resourceKey, clientRequestedVersion);
+            
+            // we initiate the request by sending the resource key and the version (encoding/protocol/etc) the client wants to use.
+            NSMutableData *request = [NSMutableData data];
+            [request appendData:[[self class] javaUTFDataForString:resourceKey]];
+            uint32_t wireVersion = CFSwapInt32HostToBig((uint32_t)clientRequestedVersion); // host order to network order
+            [request appendBytes:&wireVersion length:4];
+            
+            // ---------- Server Exchange -----------
+            NSError *error = nil;
+            NSData *responseData = [_socket readDataAfterWriteData:request timeout:self.config.timeout error:&error];
+            if (error || !responseData || responseData.length <= 0) {
+                if (error) {
+                    NSLog(@"Error in %@: %@", NSStringFromSelector(_cmd), error.localizedDescription);
+                }
+                return -1;
+            }
+            
+            NSUInteger dataLength = responseData.length;
+            Byte *responseBytes = (Byte *)[responseData bytes];
+            uint8_t serverResponse = responseBytes[0];
+            if (serverResponse == RESOURCE_OK_CODE) {
+                NSLog(@"Server responded RESOURCE_OK. code=%li", (long)serverResponse);
+                negotiatedVersion = clientRequestedVersion;
+                break;
+            } else if (serverResponse == DIFFERENT_RESOURCE_VERSION_CODE) {
+                if (dataLength >= 5) {
+                    int32_t buf;
+                    memcpy(&buf, &responseBytes[1], 4); // index 1-4 is an int32 in big endian
+                    serverMaxVersion = CFSwapInt32BigToHost(buf); // index 1-4 is an int32.
+                    NSLog(@"Server responded DIFFERENT_RESOURCE_VERSION. code=%li, max_version=%li", (long)serverResponse, (long)serverMaxVersion);
+                }
+                else {
+                    NSLog(@"Socket Protocol Error. Server responded with DIFFERENT_RESOURCE_VERSION but did not provide a max version. code=%li", (long)serverResponse);
+                    return -1;
+                }
+            } else if (serverResponse == ABORT_CODE) {
+                NSLog(@"Server responded with ABORT. code=%li", (long)serverResponse);
+                if (dataLength > 1) {
+                    NSData *messageData = [responseData subdataWithRange:NSMakeRange(1, dataLength-1)];
+                    NSString *message = [[self class] stringForjavaUTFData:messageData];
+                    if (message) {
+                        NSLog(@"ABORT message='%@'", message);
+                    }
+                }
+                break;
+            } else {
+                NSLog(@"Server responded with UNKNOWN code. code=%li", (long)serverResponse);
+                break;
+            }
+        }
+    }
+    
+    return negotiatedVersion;
+}
+
+- (BOOL) protocolHandshake:(NSInteger)protocolVersion portId:(nonnull NSString *)portId {
+    
+    if (!portId) {
+        NSLog(@"Cannot establish sitetosite protocol connection without remote input portId.");
+        return NO;
+    }
+    
+    NSMutableData *request = [NSMutableData data];
+    
+    NSString *connectionId = [[NSUUID UUID] UUIDString];
+    [request appendData:[[self class] javaUTFDataForString:connectionId]];
+    
+    if (protocolVersion >= 3) {
+        NSString *peerURLString = [[[self class] getURLForPeer:self.peer] absoluteString];
+        [request appendData:[[self class] javaUTFDataForString:peerURLString]];
+    }
+    
+    NSDictionary *properties = [NSMutableDictionary dictionary];
+    [properties setValue:@"false" forKey:@"GZIP"];
+    [properties setValue:portId forKey:@"PORT_IDENTIFIER"];
+    [properties setValue:[NSString stringWithFormat:@"%li", (long)(MSEC_PER_SEC * self.config.timeout)] forKey:@"REQUEST_EXPIRATION_MILLIS"];
+    if (protocolVersion >= 5) {
+        // TODO, if we have preferredBatchCount, preferredBatchSize, or preferredBatchDuration, they can get written here
+    }
+    
+    [[self class] appendInt32:(uint32_t)[properties count] toWireData:request];
+    for (NSString *propertyKey in [properties allKeys]) {
+        [request appendData:[[self class] javaUTFDataForString:propertyKey]];
+        [request appendData:[[self class] javaUTFDataForString:properties[propertyKey]]];
+    }
+    
+    // ---------- Server Exchange -----------
+    NSError *error;
+    NSData *responseData = [self.socket readDataAfterWriteData:request timeout:self.config.timeout error:&error];
+    if (error || !responseData || responseData.length <= 0) {
+        if (error) {
+            NSLog(@"Error in %@: %@", NSStringFromSelector(_cmd), error.localizedDescription);
+        }
+        return NO;
+    }
+    
+    NiFiTransactionResponseCode responseCode;
+    NSString *responseMessage;
+    BOOL success = [[self class] parseResponseCodeFromData:responseData responseCode:&responseCode message:&responseMessage];
+    if (!success) {
+        return NO;
+    }
+    if (responseCode != PROPERTIES_OK) {
+        NSLog(@"Error during sitetotsite protocol handshake. Server responded with response code='%i', message='%@'", responseCode, responseMessage ?: @"");
+        return NO;
+    }
+    
+    return YES;
+}
+
+- (void) sendData:(NiFiDataPacket *)data {
+    if (!self.firstPacketSend) {
+        Byte rcBytes[] = {'R', 'C', CONTINUE_TRANSACTION};
+        NSData *rcData = [NSData dataWithBytes:rcBytes length:3];
+        [self.dataPacketEncoder appendData:rcData];
+    } else {
+        self.firstPacketSend = NO; // change value for next call to this function
+    }
+    [super sendData:data]; /* NiFiTransaction */
+}
+
+- (void) cancel {
+    [super cancel]; /* NiFiTransaction */
+    [self.socket disconnect];
+}
+
+- (nullable NiFiTransactionResult *)confirmAndCompleteOrError:(NSError *_Nullable *_Nullable)error {
+    self.transactionState = DATA_EXCHANGED;
+    // 1. Send encoded flow files
+    [self.socket writeData:self.dataPacketEncoder.getEncodedData withTimeout:self.config.timeout callback:nil];
+    
+    // 2. Send FINISH_TRANSACTION, Receive CRC checksum
+    
+    Byte finishTransactionBytes[] = {'R', 'C', FINISH_TRANSACTION};
+    
+    NSError *socketError;
+    NSData *responseData = [self.socket readDataAfterWriteData:[NSData dataWithBytes:finishTransactionBytes length:3]
+                                                       timeout:self.config.timeout
+                                                         error:&socketError];
+    
+    if (socketError) {
+        NSLog(@"Error: %@", socketError.localizedDescription);
+        if (error) {
+            *error = socketError;
+        }
+        [self error];
+        return nil;
+    }
+    
+    self.transactionState = TRANSACTION_FINISHED;
+    
+    NiFiTransactionResponseCode responseCode;
+    NSString *responseMessage;
+    BOOL success = [[self class] parseResponseCodeFromData:responseData responseCode:&responseCode message:&responseMessage];
+    if (!success) {
+        if (error) {
+            *error = [NSError errorWithDomain:NiFiErrorDomain code:NiFiErrorSiteToSiteTransactionInvalidServerResponse userInfo:nil];
+        }
+        [self error];
+        return nil;
+    }
+    
+    if (responseCode != CONFIRM_TRANSACTION) {
+        [self error];
+        return nil;
+    }
+    
+//    if (self.protocolVersion > 3) { // CRC was introduced in socket s2s protocol v4
+//        NSString *expectedCrc = [@([self.dataPacketEncoder getEncodedDataCrcChecksum]) stringValue];
+//        NSLog(@"CRC checksum validation: expected_crc=%@, actual_crc=%@", expectedCrc, responseMessage);
+//        if (! [expectedCrc isEqualToString:responseMessage]) {
+//            NSLog(@"Error: BAD_CHECKSUM. Rolling back transaction. transaction_id=%@", self.transactionId);
+//            [self endTransactionWithResponseCode:BAD_CHECKSUM error:error];
+//            return nil;
+//        }
+//    }
+    
+    // 3. SEND CONFIRM_TRANSACTION to commit the flow files on the remote end
+    self.transactionState = TRANSACTION_CONFIRMED;
+    NiFiTransactionResult *transactionResult = [self endTransactionWithResponseCode:CONFIRM_TRANSACTION error:error];
+    
+    if (!transactionResult) {
+        [self error];
+        return nil;
+    }
+    
+    transactionResult.duration = [[NSDate date] timeIntervalSinceDate:self.startTime];
+    NSLog(@"Completed transaction. flowfiles_sent=%llu, transactionId=%@", transactionResult.dataPacketsTransferred, [self transactionId]);
+    return transactionResult;
+}
+
+- (nullable NiFiTransactionResult *)endTransactionWithResponseCode:(NiFiTransactionResponseCode)responseCode
+                                                             error:(NSError *_Nullable *_Nullable)error {
+    
+    NSMutableData *rcData = [NSMutableData data];
+    Byte rcBytes[] = {'R', 'C', responseCode};
+    [rcData appendBytes:rcBytes length:3];
+    [rcData appendData:[[self class] javaUTFDataForString:@""]]; // empty message
+    
+    NSError *socketError;
+    NSData *serverResponse = [self.socket readDataAfterWriteData:rcData timeout:self.config.timeout error:&socketError];
+    
+    if (socketError || !serverResponse) {
+        if (socketError) {
+            NSLog(@"Error: %@", socketError.localizedDescription);
+            if (error) {
+                *error = socketError;
+            }
+        }
+        [self error];
+        return nil;
+    }
+    
+    NiFiTransactionResponseCode serverResponseCode;
+    NSString *serverResponseMessage;
+    BOOL successfullyParsedResponse = [[self class] parseResponseCodeFromData:serverResponse
+                                                                 responseCode:&serverResponseCode
+                                                                      message:&serverResponseMessage];
+    
+    if (!successfullyParsedResponse) {
+        [self error];
+        return nil;
+    }
+    
+    [_socket writeData:[[self class] javaUTFDataForString:@"SHUTDOWN"] withTimeout:self.config.timeout callback:nil];
+    self.transactionState = TRANSACTION_COMPLETED;
+    NSTimeInterval transactionDuration = [[NSDate date] timeIntervalSinceDate:self.startTime];
+    return [[NiFiTransactionResult alloc] initWithResponseCode:serverResponseCode
+                                        dataPacketsTransferred:self.dataPacketEncoder.getDataPacketCount
+                                                       message:serverResponseMessage
+                                                      duration:transactionDuration];
+}
+
++ (BOOL) parseResponseCodeFromData:(nonnull NSData *)data
+                      responseCode:(nonnull NiFiTransactionResponseCode *)responseCodeOut
+                           message:(NSString *_Nullable *_Nullable)messageOut {
+    
+    if (!data || data.length <= 0) {
+        return NO;
+    }
+    
+    NSUInteger dataLength = data.length;
+    
+    if (responseCodeOut) {
+        Byte *responseBytes = (Byte *)[data bytes];
+        if (dataLength < 3 || responseBytes[0] != 'R' || responseBytes[1] != 'C') {
+            NSLog(@"Error parsing response code. Invalid data format.");
+            return NO;
+        }
+        *responseCodeOut = responseBytes[2];
+    }
+    
+    if (messageOut) {
+        if (dataLength > 3) {
+            NSData *messageData = [data subdataWithRange:NSMakeRange(3, dataLength-3)];
+            if (messageOut) {
+                *messageOut = [[self class] stringForjavaUTFData:messageData];
+            }
+        }
+        else {
+            *messageOut = nil;
+        }
+    }
+    
+    return YES;
+}
+
+/*! returns nifi://{peer.url.host}:{peer.rawPort} */
++ (NSURL *)getURLForPeer:(nonnull NiFiPeer *)peer {
+    
+    if (!peer) {
+        return nil;
+    }
+    
+    NSURLComponents *urlComponents = [NSURLComponents componentsWithURL:peer.url resolvingAgainstBaseURL:false];
+    
+    // protocol scheme is "nifi"
+    urlComponents.scheme = @"nifi";
+    
+    // host is the same as peer.url.host, ie, nothing to do as we initialized components from peer.url
+    
+    // port needs to be explicitly set to peer.rawPort
+    urlComponents.port = peer.rawPort;
+    
+    
+    return urlComponents.URL;
+}
+
++ (NSData *) javaUTFDataForString:(nonnull NSString*)str {
+    NSUInteger len = [str lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+    Byte buffer[2];
+    buffer[0] = (0xff & (len >> 8));
+    buffer[1] = (0xff & len);
+    NSMutableData *outData = [NSMutableData dataWithCapacity:2];
+    [outData appendBytes:buffer length:2];
+    [outData appendData:[str dataUsingEncoding:NSUTF8StringEncoding]];
+    return outData;
+}
+
++ (NSString *) stringForjavaUTFData:(nonnull NSData *)data {
+    if (!data || !data.length) {
+        return nil;
+    }
+    const Byte *dataBytes = [data bytes];
+//    Byte buffer[2];
+//    buffer[0] = ((0xff & dataBytes[0]) >> 8);
+//    buffer[1] = (0xff & dataBytes[1]);
+    uint16_t len = (((dataBytes[0] & 0xff) >> 8) | (dataBytes[1] & 0xff));
+    
+    NSString *decodedString = [[NSString alloc] initWithData:[data subdataWithRange:NSMakeRange(2, len)]
+                                                    encoding:NSUTF8StringEncoding];
+    return decodedString;
+}
+                 
++ (void) appendInt32:(uint32_t)value toWireData:(NSMutableData *)data {
+    // The server is Java, expecting a Java data stream. Java, and most platforms, use big endian / network order for wire data.
+    uint32_t swappedValue = CFSwapInt32HostToBig(value);
+    [data appendBytes:&swappedValue length:4];
+}
+                 
 
 @end
+
+
+@implementation NiFiSocketSiteToSiteClient
+
+- (nullable NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *)urlSession {
+    
+    NiFiPeer *peer = [self getPreferredPeer];
+    
+
+    NiFiHttpRestApiClient *restApiClient = [self createRestApiClientWithBaseUrl:peer.url
+                                                                     urlSession:(NSObject<NSURLSessionProtocol> *)urlSession];
+    
+    if (!peer.rawPort) {
+        NSError *s2sDiscoveryError;
+        NSDictionary *siteToSiteInfo = [restApiClient getSiteToSiteInfoOrError:&s2sDiscoveryError];
+        if (siteToSiteInfo && siteToSiteInfo[@"controller"]) {
+            if (siteToSiteInfo[@"controller"][@"remoteSiteListeningPort"]) {
+                peer.rawPort = siteToSiteInfo[@"controller"][@"remoteSiteListeningPort"];
+                NSLog(@"Discovered raw port at peer. peer='%@', raw_port=%@", peer.url, peer.rawPort);
+            }
+            else {
+                NSLog(@"Could not discover raw site to site port at peer. "
+                      "Are you sure it is configured to perform site to site over the raw socket protocol?");
+            }
+        }
+    }
+    
+    if (!self.prioritizedRemoteInputPortIdList) {
+        [self updatePrioritizedPortList:restApiClient];
+    }
+    
+    NiFiSocketTransaction *transaction = nil;
+    if (self.prioritizedRemoteInputPortIdList && [self.prioritizedRemoteInputPortIdList count] > 0) {
+        NSString *portId = self.prioritizedRemoteInputPortIdList[0];
+        NSLog(@"Attempting to initiate transaction. portId=%@", portId);
+        transaction = [[NiFiSocketTransaction alloc] initWithConfig:self.config
+                                                remoteClusterConfig:self.remoteClusterConfig
+                                                               peer:peer
+                                                             portId:(NSString *)portId];
+        if (transaction) {
+            NSLog(@"Successfully initiated transaction. transactionId=%@, portId=%@",
+                  transaction.transactionId, portId);
+        }
+    } else {
+        NSLog(@"Could not discover remote s2s input portId. Please configure either portName or portId.");
+    }
+    
+    if (!transaction) {
+        [peer markFailure];
+        NSLog(@"Could not create NiFi s2s transaction. Check NiFi s2s configuration. "
+              "Is the correct url and s2s portName/portId set?");
+    }
+    return transaction;
+    
+    
+}
+
+@end
+
+
+
 
 
 

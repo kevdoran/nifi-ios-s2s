@@ -18,6 +18,7 @@
 #import <Foundation/Foundation.h>
 #import <zlib.h>
 #import "NiFiSiteToSiteClient.h"
+#import "NiFiDataPacket.h"
 
 /********** NiFiDataPacket Class Cluster Implementation **********/
 
@@ -216,7 +217,7 @@
 /********** DataPacketWriter/Encoder Implementations **********/
 
 @interface NiFiDataPacketEncoder()
-@property (nonatomic, retain, nonnull) NSMutableData * encodedData;
+@property (nonatomic, retain, nonnull) NSMutableData *encodedData;
 @property (nonatomic) NSUInteger dataPacketCount;
 @end
 
@@ -249,13 +250,19 @@
     _dataPacketCount++;
 }
 
+- (void) appendData:(NSData *)data {
+    if (data) {
+        [_encodedData appendData:data];
+    }
+}
+
 - (void) appendInt32:(uint32_t)value {
-    uint32_t wireValue = CFSwapInt32HostToBig(value); // convert to network order if necessary
+    uint32_t wireValue = CFSwapInt32HostToBig(value); // converts to network order if necessary
     [_encodedData appendBytes:&wireValue length:4];
 }
 
 - (void) appendInt64:(int64_t)value {
-    uint64_t wireValue = CFSwapInt64HostToBig(value); // convert to network order if necessary
+    uint64_t wireValue = CFSwapInt64HostToBig(value); // converts to network order if necessary
     [_encodedData appendBytes:&wireValue length:8];
 }
 

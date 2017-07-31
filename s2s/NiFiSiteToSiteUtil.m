@@ -16,7 +16,7 @@
  */
 
 #import <Foundation/Foundation.h>
-#import "NiFiSiteToSite.h"
+#import "NiFiSiteToSiteUtil.h"
 
 @implementation NiFiSiteToSiteUtil
 

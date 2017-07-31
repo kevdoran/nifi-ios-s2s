@@ -23,13 +23,19 @@
 @implementation NiFiPeer
 
 + (nullable instancetype)peerWithUrl:(NSURL *)url {
-    return [[self alloc] initWithUrl:url];
+    return [self peerWithUrl:url rawPort:nil rawIsSecure:NO];
 }
 
-- initWithUrl:(nonnull NSURL *)url {
++ (nullable instancetype)peerWithUrl:(NSURL *)url rawPort:(nullable NSNumber *)rawPort rawIsSecure:(BOOL)secure {
+    return [[self alloc] initWithUrl:url rawPort:rawPort rawIsSecure:secure];
+}
+
+- initWithUrl:(nonnull NSURL *)url rawPort:(nullable NSNumber *)rawPort rawIsSecure:(BOOL)secure {
     self = [super init];
     if (self) {
         _url = url;
+        _rawPort = rawPort;
+        _rawIsSecure = secure;
         _flowFileCount = 0;
         _lastFailure = 0.0;
     }
@@ -80,16 +86,6 @@
         }
     }
     return NSOrderedSame;
-}
-
-// MARK: NiFiCommunicant Methods
-
-- (nullable NSString *)host {
-    return _url.host;
-}
-
-- (nullable NSNumber *)port {
-    return _url.port;
 }
 
 @end

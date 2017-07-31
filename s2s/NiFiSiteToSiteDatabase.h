@@ -25,7 +25,7 @@
  * for users of the site to site library.
  */
 
-
+#import <Foundation/Foundation.h>
 #import "NiFiSiteToSiteService.h"
 
 @interface NiFiQueuedDataPacketEntity : NSObject

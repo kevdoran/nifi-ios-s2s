@@ -25,7 +25,7 @@
  * for users of the site to site library.
  */
 
-
+#import <Foundation/Foundation.h>
 #include "NiFiSiteToSiteDatabase.h"
 
 /********** SiteToSiteDatabase FMDB-based interfaces (defined here for testing visiblity) **********/

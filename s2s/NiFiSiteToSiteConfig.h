@@ -27,7 +27,8 @@
  * This contains extensions to the public / external configuration classes.
  */
 
-# import "NiFiSiteToSite.h"
+#import <Foundation/Foundation.h>
+#import "NiFiSiteToSite.h"
 
 // MARK: - Proxy Configuration
 

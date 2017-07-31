@@ -13,5 +13,8 @@
 #
 # See the associated NOTICE file for additional information regarding copyright ownership.
 
-# Require FMDB, a light wrapper interface to SQLite, which is currently the database used for persistent data of site-to-site data 
-github "ccgus/fmdb" == 2.7.2
+# Require FMDB, a light wrapper interface to SQLite, the database used for persistent data of site-to-site data 
+github "ccgus/fmdb" ~> 2.7.2
+
+# Require CocoaAsyncSocket, an interface to CFStreams for TCP communication, used for the TCP_SOCKET variant of the s2s protocol
+github "robbiehanson/CocoaAsyncSocket" ~> 7.6.1 

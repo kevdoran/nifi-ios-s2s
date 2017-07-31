@@ -63,9 +63,11 @@ id dataPacket2 = [NiFiDataPacket dataPacketWithAttributes:attributes2 data:data2
 NiFiTransactionResult *transactionResult = [transaction confirmAndCompleteOrError:nil];
 ```
 
+Note: For Objective-C apps, note that s2s assumes Automatic Reference Counting (ARC) and is not recomended for use in applications compiled in Manual Memory Management mode.
+
 ### From Swift
 
-As an Objective-C Cocoa Framework, s2s also defines a Swift module and can be imported as such into a Swift or mixed-language project.
+As an Objective-C Cocoa Framework, s2s also defines a Swift module and can be imported as such into a Swift or mixed-language project. The s2s API is nullability-hinted to assist Swift developers.
 
 To use the s2s module in your Swift code, add the s2s.framework to your target's Linked Frameworks and Libraries, and then add this module import to the top of your .swift source code file:
 
@@ -194,7 +196,7 @@ are covered in this document.
 The S2S Framework can use TLS when communicating to a NiFI server, provided the NiFi server is configured for secure communication.
 
 If a NiFi server is using a certificate signed by a [trusted root Certificate Authority](https://support.apple.com/en-us/HT204132), 
-all that is required is to configure the site-to-site client with the option `secure=true`. HTTPS will be used as the  transport protocol.
+all that is required is to configure the site-to-site client with a `https://` URL for the remote NiFi cluster. HTTPS will be used as the  transport protocol.
 
 If the NiFi server is using a self-signed certificate (e.g., a test environment), or your app needs to perform nonstandard TLS chain 
 validation for some other reason, there is more you must do to make the system trust the CA. It is recommended you add that authority's 
@@ -229,6 +231,17 @@ as they are performed by a system process, and Apple's platform currently does n
 Therefore, if your app requires to make use of the s2s module in the background, it is recommended you use username/password client credentials, which
 are utilized in the library to communicate with the server to create an authentication token for site-to-site communication. For more information on
 this limitation of Apple's iOS platform, see: https://forums.developer.apple.com/thread/28713
+
+#### Socket Protocol Security
+
+When using the `TCP_SOCKET` transport protocol for SiteToSite (instead of the default `HTTP`), there is an additional step for securing the transport layer with an SSL Context.
+
+Internally, this transport protocol is built using the CFStream API. You can pass through the TLS/SSL settings to use for the connection in the NiFiSiteToSiteRemoteClusterConfig.socketTLSSettings field. The settings are a NSDictionary, with key/values well documented in Apple's developer documentation for CFStreams:
+
+* [CFStrem Property SSL Settings](https://developer.apple.com/documentation/cfnetwork/kcfstreampropertysslsettings)
+* [CFStream Property SSL Settings Constants](https://developer.apple.com/documentation/corefoundation/cfstream/cfstream_property_ssl_settings_constants)
+
+If you do not set a value for the `socketTLSSettings` config field, the connection will be unsecure. If you want a secure connection using the iOS platform's default SSL settings (reasonable in most cases, assuming you are using a server certificate signed by a root, third-party CA) then pass an empty dictionary.
 
 ### Proxy Configuration
 

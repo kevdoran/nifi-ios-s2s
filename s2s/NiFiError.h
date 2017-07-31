@@ -35,6 +35,9 @@ NS_ENUM(NSInteger)
 {
     NiFiErrorUnknown = -1,
     
+    // Miscelleneous Errors
+    NiFiErrorTimeout = 100,
+    
     // HTTP Errors
     NiFiErrorHttpStatusCode = 1000, // note, 1000-1999 are reserved for errors relating to HTTP status codes
                                     // to pass the HTTP Status code in the error code, you can add it to this,
@@ -45,11 +48,13 @@ NS_ENUM(NSInteger)
     // Site-to-Site
     NiFiErrorSiteToSiteClient = 2000,
     NiFiErrorSiteToSiteClientCouldNotCreateTransaction = 2001,
-    NiFiErrorSiteToSiteClientCouldNotLookupInputPorts= 2002,
-    NiFiErrorSiteToSiteClientCouldNotLookupPeers= 2003,
+    NiFiErrorSiteToSiteClientCouldNotLookupSiteToSiteInfo = 2002,
+    NiFiErrorSiteToSiteClientCouldNotLookupInputPorts = 2003,
+    NiFiErrorSiteToSiteClientCouldNotLookupPeers= 2004,
     
     // Site-to-Site Transaction
     NiFiErrorSiteToSiteTransaction = 3000,
+    NiFiErrorSiteToSiteTransactionInvalidServerResponse = 3001,
 
     // Site-to-Site Database
     NiFiErrorSiteToSiteDatabase = 4000,

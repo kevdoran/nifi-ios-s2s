@@ -17,7 +17,7 @@
 
 #import <Foundation/Foundation.h>
 #import "NiFiHttpRestApiClient.h"
-#import "NiFiSiteToSiteModel.h"
+#import "NiFiSiteToSiteTransaction.h"
 #import "NiFiError.h"
 
 #define DEFAULT_HTTP_TIMEOUT 15.0
@@ -128,7 +128,7 @@ static NSString *const HTTP_HEADER_LOCATION_URI_INTENT_VALUE = @"transaction-url
 
 // MARK: - Discovery
 
-- (nullable NSDictionary *)getRemoteInputPortsOrError:(NSError *_Nullable *_Nullable)error {
+- (nullable NSDictionary *)getSiteToSiteInfoOrError:(NSError *_Nullable *_Nullable)error {
     NSURLComponents * urlComponents = [_baseUrlComponents copy];
     urlComponents.path = [NSString stringWithFormat:@"%@/site-to-site", urlComponents.path];
     NSURL *url = urlComponents.URL;
@@ -154,34 +154,50 @@ static NSString *const HTTP_HEADER_LOCATION_URI_INTENT_VALUE = @"transaction-url
     if (response == nil) {
         if (error) {
             *error = dataTaskError ?: [NSError errorWithDomain:NiFiErrorDomain
-                                                          code:NiFiErrorSiteToSiteClientCouldNotLookupInputPorts userInfo:nil];
+                                                          code:NiFiErrorSiteToSiteClientCouldNotLookupSiteToSiteInfo
+                                                      userInfo:nil];
         }
-        NSLog(@"Unable to discover remote input ports. Error communicating with peer.");
+        NSLog(@"Unable to discover site-to-site info. Error communicating with peer.");
         return nil;
     } else if (response.statusCode != 200) {
         if (error) {
             *error = [NSError errorWithDomain:NiFiErrorDomain code:NiFiErrorHttpStatusCode + response.statusCode userInfo:nil];
         }
-        NSLog(@"Unable to discover remote input ports. Server returned status code '%ld'.", (long)response.statusCode);
+        NSLog(@"Unable to discover site-to-site info. Server returned status code '%ld'.", (long)response.statusCode);
         return nil;
     }
     
     // Response body should be JSON with site-to-site info
     NSError *jsonError;
-    NSDictionary *bodyJson = [NSJSONSerialization JSONObjectWithData:data
-                                                             options:0
-                                                               error:&jsonError];
+    NSDictionary *siteToSiteInfo = [NSJSONSerialization JSONObjectWithData:data
+                                                                   options:0
+                                                                     error:&jsonError];
     if (jsonError) {
         if (error) {
             *error = jsonError;
-            NSLog(@"Unable to discover remote input ports. Error deserializing JSON response.");
+            NSLog(@"Unable to discover site-to-site info. Error deserializing JSON response.");
             return nil;
         }
     }
     
+    return siteToSiteInfo;
+}
+
+- (nullable NSDictionary *)getRemoteInputPortsOrError:(NSError *_Nullable *_Nullable)error {
+    
+    NSError *siteToSiteInfoError;
+    NSDictionary *siteToSiteInfo = [self getSiteToSiteInfoOrError:&siteToSiteInfoError];
+    
+    if (!siteToSiteInfo) {
+        if (siteToSiteInfoError && *error) {
+            *error = siteToSiteInfoError;
+        }
+        return nil;
+    }
+
     NSMutableDictionary *portIdsByName = nil;
-    if (bodyJson && bodyJson[@"controller"]) {
-        NSArray *inputPorts = bodyJson[@"controller"][@"inputPorts"];
+    if (siteToSiteInfo && siteToSiteInfo[@"controller"]) {
+        NSArray *inputPorts = siteToSiteInfo[@"controller"][@"inputPorts"];
         if (inputPorts) {
             portIdsByName = [NSMutableDictionary dictionary];
             for (NSDictionary *inputPort in inputPorts) {

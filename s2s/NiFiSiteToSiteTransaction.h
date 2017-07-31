@@ -15,22 +15,20 @@
  * See the associated NOTICE file for additional information regarding copyright ownership.
  */
 
-#ifndef NiFiSiteToSiteModel_h
-#define NiFiSiteToSiteModel_h
+#ifndef NiFiSiteToSiteTransaction_h
+#define NiFiSiteToSiteTransaction_h
 
 /* Visibility: Internal / Private
  *
  * This header declares classes and functionality that is only for use
  * internally in the site to site library implementation and not designed
  * for users of the site to site library.
- *
- * This contains a collection of miscellaneous model object types.
  */
 
 #import <Foundation/Foundation.h>
 #import "NiFiSiteToSite.h"
 
-// MARK: - Internal Enums
+// MARK: - Internal Transaction Enums and Interface
 
 typedef enum {
     RESERVED = 0, // in case we need to extend the length of response code,
@@ -64,9 +62,6 @@ typedef enum {
     END_OF_STREAM = 255               // (255, "End of Stream", false);
 } NiFiTransactionResponseCode;
 
-
-// MARK: - Internal Extensions to External Types
-
 @interface NiFiTransactionResult()
 @property (nonatomic, readwrite) NiFiTransactionResponseCode responseCode;
 @property (nonatomic, readwrite) uint64_t dataPacketsTransferred;
@@ -79,19 +74,4 @@ typedef enum {
                                     duration:(NSTimeInterval)duration;
 @end
 
-
-// MARK: - Internal Types
-
-@interface NiFiDataPacketEncoder : NSObject
-// + (nonnull NSData *)encodeDataPacket:(nonnull NiFiDataPacket *)dataPacket;
-- (nonnull instancetype)init;
-- (void)appendDataPacket:(nonnull NiFiDataPacket *)dataPacket;
-- (nonnull NSData *)getEncodedData;
-- (nonnull NSInputStream *)getEncodedDataStream;
-- (NSUInteger)getDataPacketCount;
-- (NSUInteger)getEncodedDataCrcChecksum;
-- (NSUInteger)getEncodedDataByteLength;
-@end
-
-
-#endif /* NiFiSiteToSiteModel_h */
+#endif /* NiFiSiteToSiteTransaction_h */

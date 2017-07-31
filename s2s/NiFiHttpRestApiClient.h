@@ -26,7 +26,9 @@
  */
 
 #import <Foundation/Foundation.h>
-#import "NiFiSiteToSiteModel.h"
+#import "NiFiSiteToSiteUtil.h"
+#import "NiFiSiteToSiteTransaction.h"
+#import "NiFiDataPacket.h"
 
 // A protocol for Apple's NSURLSession, a dependecy of NiFiHttpRestApiClient
 // This protocol is used to inject stubs/mocks in testing.
@@ -59,6 +61,8 @@
                               urlSession:(nonnull NSObject<NSURLSessionProtocol> *)urlSession;
 
 - (nullable NSURL *)baseUrl;
+
+- (nullable NSDictionary *)getSiteToSiteInfoOrError:(NSError *_Nullable *_Nullable)error;
 
 - (nullable NSDictionary *)getRemoteInputPortsOrError:(NSError *_Nullable *_Nullable)error;
 

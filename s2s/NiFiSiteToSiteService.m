@@ -31,11 +31,11 @@
 
 @implementation NiFiNoOpDataPacketPrioritizer
 
-+(nonnull instancetype)prioritizer {
++ (nonnull instancetype)prioritizer {
     return [self prioritizerWithFixedTTL:1.0];
 }
 
-+(nonnull instancetype)prioritizerWithFixedTTL:(NSTimeInterval)ttl {
++ (nonnull instancetype)prioritizerWithFixedTTL:(NSTimeInterval)ttl {
     return [[self alloc] initWithFixedTTL:ttl];
 }
 

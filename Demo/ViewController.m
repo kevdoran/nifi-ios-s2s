@@ -34,13 +34,12 @@
     [super viewDidLoad];
     [[self view] setBackgroundColor:[UIColor colorWithRed:217.0f/255.0f green:217.0f/255.0f blue:217.0f/255.0f alpha:1.0]];
     
-    // NiFi config. Note, rather than hardcoded here, this could be loaded from another config source, e.g., a .plist resource file or UserDefaults
-    NiFiSiteToSiteRemoteClusterConfig *remoteNiFiInstance =
-        [NiFiSiteToSiteRemoteClusterConfig configWithUrl:[NSURL URLWithString:@"http://localhost:8080"]];
-    // credentials
+    /* NiFi config. Note, rather than hardcoded here, this could be loaded from another config source, e.g., a .plist resource file or UserDefaults */
+    NiFiSiteToSiteRemoteClusterConfig *remoteNiFiInstance = [NiFiSiteToSiteRemoteClusterConfig configWithUrl:[NSURL URLWithString:@"http://localhost:8080"]];
     // remoteNiFiInstance.username = @"admin";
     // remoteNiFiInstance.password = @"admin-password";
-    // add a url session delegate that handles custom server TLS chain validation (not needed for cert signed by root CA)
+    
+    /* add a url session delegate that handles custom server TLS chain validation (not needed for cert signed by root CA) */
     // remoteNiFiInstance.urlSessionDelegate = [[URLSessionAuthenticatorDelegate alloc] init];
     
     NiFiSiteToSiteClientConfig *s2sConfig = [NiFiSiteToSiteClientConfig configWithRemoteCluster: remoteNiFiInstance];

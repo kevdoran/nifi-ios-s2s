@@ -28,26 +28,41 @@
  * test cases.
  */
 
-#import "NiFiSiteToSiteModel.h"
+#import <Foundation/Foundation.h>
 #import "NiFiHttpRestApiClient.h"
+#import "NiFiDataPacket.h"
 
-@interface NiFiHttpTransaction : NSObject <NiFiTransaction>
+@interface NiFiTransaction : NSObject <NiFiTransaction>
 
 @property (nonatomic, retain, readwrite, nonnull) NSDate *startTime;
 @property (nonatomic, readwrite) NiFiTransactionState transactionState;
 @property (atomic, readwrite) bool shouldKeepAlive;
-@property (nonatomic, retain, readwrite, nonnull) NiFiHttpRestApiClient *restApiClient;
-@property (nonatomic, readwrite, nonnull) NiFiTransactionResource *transactionResource;
-@property (nonatomic, readwrite, nonnull) NSOutputStream *dataPacketWriterOutputStream;
 @property (nonatomic, readwrite, nonnull) NiFiDataPacketEncoder *dataPacketEncoder;
 @property (nonatomic, readwrite, nullable) NiFiPeer *peer;
 
+@end
+
+
+@interface NiFiHttpTransaction : NiFiTransaction
+
+@property (nonatomic, retain, readwrite, nonnull) NiFiHttpRestApiClient *restApiClient;
+@property (nonatomic, readwrite, nonnull) NiFiTransactionResource *transactionResource;
+
 - (nonnull instancetype) initWithPortId:(nonnull NSString *)portId
                       httpRestApiClient:(nonnull NiFiHttpRestApiClient *)restApiClient;
-
 - (nonnull instancetype) initWithPortId:(nonnull NSString *)portId
                       httpRestApiClient:(nonnull NiFiHttpRestApiClient *)restApiClient
                                    peer:(nullable NiFiPeer *)peer;
+
+@end
+
+
+@interface NiFiSocketTransaction : NiFiTransaction
+
+- (nonnull instancetype) initWithConfig:(nonnull NiFiSiteToSiteClientConfig *)config
+                    remoteClusterConfig:(nonnull NiFiSiteToSiteRemoteClusterConfig *)remoteCluster
+                                   peer:(nonnull NiFiPeer *)peer
+                                 portId:(nonnull NSString *)portId;
 
 @end
 

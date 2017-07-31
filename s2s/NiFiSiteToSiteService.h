@@ -23,6 +23,7 @@
  * This header defines a public interface of the s2s framework / module.
  */
 
+#import <Foundation/Foundation.h>
 #import "NiFiSiteToSite.h"
 
 
