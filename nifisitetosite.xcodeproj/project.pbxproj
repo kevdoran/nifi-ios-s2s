@@ -36,6 +36,9 @@
 		C07B8C5A1F04488800069647 /* NiFiSiteToSiteDatabaseTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C07B8C591F04488800069647 /* NiFiSiteToSiteDatabaseTests.m */; };
 		C07B8C5C1F056E6800069647 /* FMDB.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C07B8C5B1F056E6800069647 /* FMDB.framework */; };
 		C07B8C6A1F05741700069647 /* NiFiSiteToSiteDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = C07B8C691F05741700069647 /* NiFiSiteToSiteDatabase.m */; };
+		C0807CC21F30D83A00E9653A /* NiFiPeerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C0807CC11F30D83900E9653A /* NiFiPeerTests.m */; };
+		C0807CC41F30F76500E9653A /* NiFiSocketTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C0807CC31F30F76500E9653A /* NiFiSocketTests.m */; };
+		C0807CC81F3221AE00E9653A /* NiFiSiteToSiteClientTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C0807CC71F3221AE00E9653A /* NiFiSiteToSiteClientTests.m */; };
 		C0923D3C1F214B3400ACEE95 /* NiFiSiteToSiteClient.h in Headers */ = {isa = PBXBuildFile; fileRef = C0923D3B1F214B3400ACEE95 /* NiFiSiteToSiteClient.h */; };
 		C0923D3E1F2252AC00ACEE95 /* NiFiSiteToSiteConfig.h in Headers */ = {isa = PBXBuildFile; fileRef = C0923D3D1F2252AC00ACEE95 /* NiFiSiteToSiteConfig.h */; };
 		C0923D441F284EF400ACEE95 /* CocoaAsyncSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C0923D431F284EF400ACEE95 /* CocoaAsyncSocket.framework */; };
@@ -133,6 +136,9 @@
 		C07B8C591F04488800069647 /* NiFiSiteToSiteDatabaseTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteDatabaseTests.m; sourceTree = "<group>"; };
 		C07B8C5B1F056E6800069647 /* FMDB.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FMDB.framework; path = Carthage/Build/iOS/FMDB.framework; sourceTree = "<group>"; };
 		C07B8C691F05741700069647 /* NiFiSiteToSiteDatabase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteDatabase.m; sourceTree = "<group>"; };
+		C0807CC11F30D83900E9653A /* NiFiPeerTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiPeerTests.m; sourceTree = "<group>"; };
+		C0807CC31F30F76500E9653A /* NiFiSocketTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSocketTests.m; sourceTree = "<group>"; };
+		C0807CC71F3221AE00E9653A /* NiFiSiteToSiteClientTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NiFiSiteToSiteClientTests.m; sourceTree = "<group>"; };
 		C0923D3B1F214B3400ACEE95 /* NiFiSiteToSiteClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteClient.h; sourceTree = "<group>"; };
 		C0923D3D1F2252AC00ACEE95 /* NiFiSiteToSiteConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NiFiSiteToSiteConfig.h; sourceTree = "<group>"; };
 		C0923D431F284EF400ACEE95 /* CocoaAsyncSocket.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CocoaAsyncSocket.framework; path = Carthage/Build/iOS/CocoaAsyncSocket.framework; sourceTree = "<group>"; };
@@ -299,11 +305,14 @@
 			isa = PBXGroup;
 			children = (
 				C0DD29301EE723FF00AD1B7A /* Info.plist */,
+				C0DD292E1EE723FF00AD1B7A /* s2sTests.m */,
 				C0D360A11EFBFE91008B1BB5 /* NiFiDataPacketTests.m */,
 				C0D3608A1EF2F9C0008B1BB5 /* NiFiHttpRestApiClientTests.m */,
 				C0D360A31EFC1887008B1BB5 /* NiFiHttpTransactionTests.m */,
 				C07B8C591F04488800069647 /* NiFiSiteToSiteDatabaseTests.m */,
-				C0DD292E1EE723FF00AD1B7A /* s2sTests.m */,
+				C0807CC11F30D83900E9653A /* NiFiPeerTests.m */,
+				C0807CC31F30F76500E9653A /* NiFiSocketTests.m */,
+				C0807CC71F3221AE00E9653A /* NiFiSiteToSiteClientTests.m */,
 			);
 			path = s2sTests;
 			sourceTree = "<group>";
@@ -558,10 +567,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				C0D360A41EFC1887008B1BB5 /* NiFiHttpTransactionTests.m in Sources */,
+				C0807CC41F30F76500E9653A /* NiFiSocketTests.m in Sources */,
 				C0DD292F1EE723FF00AD1B7A /* s2sTests.m in Sources */,
 				C0D360A21EFBFE91008B1BB5 /* NiFiDataPacketTests.m in Sources */,
+				C0807CC21F30D83A00E9653A /* NiFiPeerTests.m in Sources */,
 				C0D3608B1EF2F9C0008B1BB5 /* NiFiHttpRestApiClientTests.m in Sources */,
 				C07B8C5A1F04488800069647 /* NiFiSiteToSiteDatabaseTests.m in Sources */,
+				C0807CC81F3221AE00E9653A /* NiFiSiteToSiteClientTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

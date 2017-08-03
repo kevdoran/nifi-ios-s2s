@@ -517,7 +517,6 @@ static NSString *const HTTP_HEADER_LOCATION_URI_INTENT_VALUE = @"transaction-url
                                                        timeoutInterval:DEFAULT_HTTP_TIMEOUT]; 
     [request setHTTPMethod:@"DELETE"];
     
-    // TODO, check if there are additional headers to include in the request depending on the config.
     NSDictionary *headers = @{@"Content-Type": @"application/octet-stream",
                               HTTP_HEADER_PROTOCOL_VERSION: HTTP_SITE_TO_SITE_PROTOCOL_VERSION};
     [request setAllHTTPHeaderFields:headers];

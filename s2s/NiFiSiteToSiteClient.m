@@ -43,6 +43,8 @@
 @property (nonatomic, readwrite, nullable)NSArray *prioritizedRemoteInputPortIdList;
 @property (atomic, readwrite, nonnull)NSSet *initialPeerKeySet; // key of every peer in initial config
 @property (atomic, readwrite, nonnull)NSArray<NiFiPeer *> *currentPeerList;
+@property (nonatomic, readwrite) NSTimeInterval nextPeerUpdateTimeIntervalSinceReferenceDate;
+@property (nonatomic, readwrite) BOOL isPeerUpdateNecessary;
 - (nullable instancetype) initWithConfig:(nonnull NiFiSiteToSiteClientConfig *)config
                           remoteCluster:(nonnull NiFiSiteToSiteRemoteClusterConfig *)remoteClusterConfig;
 @end
@@ -255,10 +257,8 @@
         if (! _currentPeerList || _currentPeerList.count <= 0) {
             self = nil;
         }
-        if (self.config.peerUpdateInterval > 0.0) {
-            // starts background peer refresh, initial delay is zero, repeating delay will come from config.
-            [self scheduleNextPeerUpdateWithDelay:0.0];
-        }
+        self.isPeerUpdateNecessary = YES;
+        self.nextPeerUpdateTimeIntervalSinceReferenceDate = [NSDate timeIntervalSinceReferenceDate];
     }
     return self;
 }
@@ -271,7 +271,6 @@
 
 - (nullable NiFiPeer *)getPreferredPeer {
     NSArray *sortedPeerList = [self getSortedPeerList];
-    // TODO, for large clusters, sort is non-trivial computation expense, so we should cache the sort result
     if (!sortedPeerList) {
         return nil;
     }
@@ -312,10 +311,30 @@
         if (newPeers) {
             [self addPeers:newPeers];
             NSLog(@"Successfully updated peers for remote NiFi cluster.");
-            return; // done
+            self.isPeerUpdateNecessary = NO;
+            if (self.config.peerUpdateInterval > 0.0) {
+                self.nextPeerUpdateTimeIntervalSinceReferenceDate =
+                    [NSDate timeIntervalSinceReferenceDate] + self.config.peerUpdateInterval;
+            }
+            return;
         }
     }
     NSLog(@"Error: Failed to update peers for remote NiFi cluster.");
+}
+
+- (void)updatePeersIfNecessary {
+    
+    if (!self.isPeerUpdateNecessary) {
+        // has the configured refresh interval (if set to > 0.0) elapsed?
+        self.isPeerUpdateNecessary = (self.config.peerUpdateInterval > 0.0 ?
+                                      [NSDate timeIntervalSinceReferenceDate] > self.nextPeerUpdateTimeIntervalSinceReferenceDate :
+                                      NO);
+    }
+    
+    if (self.isPeerUpdateNecessary) {
+        [self updatePeers];
+    }
+    
 }
 
 - (void)addPeers:(NSArray<NiFiPeer *> *)newPeerList {
@@ -335,22 +354,6 @@
     if (newPeerMap && newPeerMap.count > 0) {
         _currentPeerList = [newPeerMap allValues];
     }
-}
-
-- (void)scheduleNextPeerUpdateWithDelay:(NSTimeInterval)delay {
-    NSLog(@"Scheduling background task to update peer list.");
-    // TODO, instead of dispatch_after, look into if a serial queue or NSOperationsQueue would be more appropriate,
-    // especially for small refresh intervals. Alternatively could just do this lazily on demand when createTransaction is called.
-    dispatch_time_t nextPeerUpdate = dispatch_time(DISPATCH_TIME_NOW, delay * NSEC_PER_SEC);
-    dispatch_after(nextPeerUpdate, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^(void){
-        if (self) {
-            [self updatePeers];
-        }
-        if (self.config.peerUpdateInterval > 0.0) {
-            // this will put the next peer update task on an async queue
-            [self scheduleNextPeerUpdateWithDelay:self.config.peerUpdateInterval];
-        }
-    });
 }
 
 // MARK: Helper functions 
@@ -381,8 +384,6 @@
                 }
                 if (proxyConfig.url && proxyConfig.url.port) {
                     proxyConfigDictionary[(NSString *)kCFProxyPortNumberKey] = proxyConfig.url.port;
-                } else {
-                    // TODO, test if default HTTP/S ports will be used. If not, set the defaults here.
                 }
                 
                 if (proxyConfig.username && proxyConfig.password) {
@@ -606,6 +607,7 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
 
 - (nullable NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *)urlSession {
     
+    [self updatePeersIfNecessary];
     NiFiPeer *peer = [self getPreferredPeer];
     
     NiFiHttpRestApiClient *restApiClient = [self createRestApiClientWithBaseUrl:peer.url
@@ -630,6 +632,7 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
     
     if (!transaction) {
         [peer markFailure];
+        self.isPeerUpdateNecessary = YES;
         NSLog(@"Could not create NiFi s2s transaction. Check NiFi s2s configuration. "
               "Is the correct url and s2s portName/portId set?");
     }
@@ -818,9 +821,6 @@ static const int ABORT_CODE = 255;
     [properties setValue:@"false" forKey:@"GZIP"];
     [properties setValue:portId forKey:@"PORT_IDENTIFIER"];
     [properties setValue:[NSString stringWithFormat:@"%li", (long)(MSEC_PER_SEC * self.config.timeout)] forKey:@"REQUEST_EXPIRATION_MILLIS"];
-    if (protocolVersion >= 5) {
-        // TODO, if we have preferredBatchCount, preferredBatchSize, or preferredBatchDuration, they can get written here
-    }
     
     [[self class] appendInt32:(uint32_t)[properties count] toWireData:request];
     for (NSString *propertyKey in [properties allKeys]) {
@@ -908,16 +908,6 @@ static const int ABORT_CODE = 255;
         [self error];
         return nil;
     }
-    
-//    if (self.protocolVersion > 3) { // CRC was introduced in socket s2s protocol v4
-//        NSString *expectedCrc = [@([self.dataPacketEncoder getEncodedDataCrcChecksum]) stringValue];
-//        NSLog(@"CRC checksum validation: expected_crc=%@, actual_crc=%@", expectedCrc, responseMessage);
-//        if (! [expectedCrc isEqualToString:responseMessage]) {
-//            NSLog(@"Error: BAD_CHECKSUM. Rolling back transaction. transaction_id=%@", self.transactionId);
-//            [self endTransactionWithResponseCode:BAD_CHECKSUM error:error];
-//            return nil;
-//        }
-//    }
     
     // 3. SEND CONFIRM_TRANSACTION to commit the flow files on the remote end
     self.transactionState = TRANSACTION_CONFIRMED;
@@ -1046,9 +1036,6 @@ static const int ABORT_CODE = 255;
         return nil;
     }
     const Byte *dataBytes = [data bytes];
-//    Byte buffer[2];
-//    buffer[0] = ((0xff & dataBytes[0]) >> 8);
-//    buffer[1] = (0xff & dataBytes[1]);
     uint16_t len = (((dataBytes[0] & 0xff) >> 8) | (dataBytes[1] & 0xff));
     
     NSString *decodedString = [[NSString alloc] initWithData:[data subdataWithRange:NSMakeRange(2, len)]
@@ -1070,6 +1057,7 @@ static const int ABORT_CODE = 255;
 
 - (nullable NSObject <NiFiTransaction> *)createTransactionWithURLSession:(NSURLSession *)urlSession {
     
+    [self updatePeersIfNecessary];
     NiFiPeer *peer = [self getPreferredPeer];
     
 
@@ -1113,6 +1101,7 @@ static const int ABORT_CODE = 255;
     
     if (!transaction) {
         [peer markFailure];
+        self.isPeerUpdateNecessary = YES;
         NSLog(@"Could not create NiFi s2s transaction. Check NiFi s2s configuration. "
               "Is the correct url and s2s portName/portId set?");
     }

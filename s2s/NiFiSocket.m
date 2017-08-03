@@ -61,6 +61,7 @@
     if (self) {
         _nextTagValue = 0L;
         _readCallbackForTag = [NSMutableDictionary dictionary];
+        _writeCallbackForTag = [NSMutableDictionary dictionary];
         _socket = socket;
         [_socket setDelegate:self];
         [_socket setDelegateQueue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0)];

@@ -54,7 +54,7 @@
 
 - (NSComparisonResult)compare:(NiFiPeer *)other {
     NSInteger lastFailureMillis = _lastFailure * 1000;
-    NSInteger otherlastFailureMillis = other.lastFailure + 1000;
+    NSInteger otherlastFailureMillis = other.lastFailure * 1000;
     if (lastFailureMillis > otherlastFailureMillis) {
         return NSOrderedDescending;  // 1
     } else if (lastFailureMillis < otherlastFailureMillis) {

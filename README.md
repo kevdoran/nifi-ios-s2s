@@ -137,30 +137,49 @@ import s2s
 
 // ...
 
-// Early in the app, configure and store this somewhere
+// Early in the app set your s2s client configuration
+
 let s2sClientConfig = NiFiQueuedSiteToSiteClientConfig()
 s2sClientConfig.addRemoteCluster(NiFiSiteToSiteRemoteClusterConfig(url: URL(string: "http://localhost:8080")))
-s2sConfig.portName = "From iOS";
 s2sConfig.portName = "From iOS";
 s2sClientConfig.dataPacketPrioritizer = NiFiNoOpDataPacketPrioritizer(fixedTTL: 60.0)
 
 // ...
 
-// Later, when we have data to send.
-let dataPacket = NiFiDataPacket(attributes: ["key1": "value1"],
-                                data: "This is the content of the data packet".data(using: String.Encoding.utf8))
-NiFiSiteToSiteService.enqueueDataPacket(dataPacket, config: s2sClientConfig, completionHandler: queuedOperationCompleted)
+// Best Practice: Setup some form of periodic queue processing and cleaning events
 
-// ...
-
-// At any point in the future, for instance from a dispatched task, child thread, or within a handler for background processing notifications from the OS.
-NiFiSiteToSiteService.processQueuedPackets(with: self.s2sClientConfig,
-                                           completionHandler: self.queuedOperationCompleted)
-
-// this is the function we are passing as a callback to enqueueDataPacket and processQueuedPackets calls
 func queuedOperationCompleted(status: NiFiSiteToSiteQueueStatus?, error: Error?) {
     // Process completion event
+
+    // The status parameter holds queue count, size, and an "isFull" flag.
 }
+
+func cleanAndProcessQueue() {
+    NSLog("Cleaning and processing NiFi SiteToSite queue")
+
+    // Cleanup deletes queued packets based on maxQueueCount or maxQueueSize or if packets are older than their TTL
+    NiFiSiteToSiteService.cleanupQueuedPackets(with: self.s2sClientConfig,
+                                               completionHandler: self.queuedOperationCompleted)
+        
+    // Process sends the next batch (based on configured batchCount or batchSize) to the remote NiFi
+    NiFiSiteToSiteService.processQueuedPackets(with: self.s2sClientConfig,
+                                               completionHandler: self.queuedOperationCompleted)
+    }
+
+queueProcessingTimer = Timer.scheduledTimer(timeInterval: queueProcessingInterval,
+                                            target: self,
+                                            selector: #selector(cleanAndProcessQueue),
+                                            userInfo: nil,
+                                            repeats: true)
+
+// ... 
+
+// At any point in the app, when we have data to send.
+let dataPacket = NiFiDataPacket(attributes: ["key1": "value1"],
+                                data: "This is the content of the data packet".data(using: String.Encoding.utf8))
+NiFiSiteToSiteService.enqueueDataPacket(dataPacket, 
+                                        config: s2sClientConfig, 
+                                        completionHandler: queuedOperationCompleted)
 ```
 
 For a more complete example, see the included DemoSwift application.

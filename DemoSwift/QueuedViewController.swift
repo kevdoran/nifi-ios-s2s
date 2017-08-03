@@ -23,7 +23,9 @@ class QueuedViewController: UIViewController {
     
     let SECONDS_TO_NANOS = 1000000000
     let queueProcessingInterval = TimeInterval(5.0)
+    var queueProcessingTimer: Timer!
     var s2sClientConfig: NiFiQueuedSiteToSiteClientConfig!
+    
     
     var buttonClicksSinceLoad = 0;
     var amount = 10;
@@ -35,7 +37,7 @@ class QueuedViewController: UIViewController {
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+        queueProcessingTimer.invalidate()
     }
     
     override func viewDidLoad() {
@@ -80,6 +82,8 @@ class QueuedViewController: UIViewController {
         queueProcessingSwitch.addTarget(self, action: #selector(queueProcessingSwitchChanged), for: UIControlEvents.valueChanged)
     }
     
+    
+    
     func updateCreationAmount() {
         amount = Int(amountSlider.value * s2sClientConfig.maxQueuedPacketCount.floatValue)
         if (amount <= 0) {
@@ -107,26 +111,32 @@ class QueuedViewController: UIViewController {
     
     func queueProcessingSwitchChanged() {
         if(queueProcessingSwitch.isOn) {
-            scheduleNextQueueProcessingEvent(withDelay: 0.0)
+            queueProcessingTimer = Timer.scheduledTimer(timeInterval: queueProcessingInterval,
+                                                        target: self,
+                                                        selector: #selector(cleanAndProcessQueue),
+                                                        userInfo: nil,
+                                                        repeats: true)
+        } else {
+            queueProcessingTimer.invalidate()
         }
     }
     
-    func scheduleNextQueueProcessingEvent(withDelay: TimeInterval) {
-        if(queueProcessingSwitch.isOn) {
-            NSLog("Scheduling background task to send batch of queued packets to NiFi.")
-            let nextProcessTime = DispatchTime.now() + withDelay
-            DispatchQueue.global().asyncAfter(deadline: nextProcessTime) {
-                if (self.queueProcessingSwitch.isOn) {
-                    NiFiSiteToSiteService.processQueuedPackets(with: self.s2sClientConfig,
-                                                               completionHandler: self.queuedOperationCompleted)
-                    self.scheduleNextQueueProcessingEvent(withDelay: self.queueProcessingInterval)
-                }
-            }
-        }
+    func cleanAndProcessQueue() {
+        NSLog("Cleaning and processing NiFi SiteToSite queue")
+        // Cleanup deletes queued packets based on maxQueueCount or maxQueueSize or if packets are older than their TTL
+        NiFiSiteToSiteService.cleanupQueuedPackets(with: self.s2sClientConfig,
+                                                   completionHandler: self.queuedOperationCompleted)
+        
+        // Process sends the next batch (based on configured batchCount or batchSize) to the remote NiFi
+        NiFiSiteToSiteService.processQueuedPackets(with: self.s2sClientConfig,
+                                                   completionHandler: self.queuedOperationCompleted)
     }
     
     func queuedOperationCompleted(status: NiFiSiteToSiteQueueStatus?, error: Error?) {
         if (status != nil) {
+            NSLog("Received NiFi background queue operation callback. queueCount=%i, queueSize=%iB, queueIsFull=%@",
+                  status!.queuedPacketCount, status!.queuedPacketSizeBytes, status!.isFull.description)
+            
             DispatchQueue.main.async {
                 // Update Queue Count Label
                 self.queueCountLabel.text = String(status!.queuedPacketCount)
@@ -136,8 +146,15 @@ class QueuedViewController: UIViewController {
                 self.queueCountCapacityBar.setProgress(queueCountCapacityFraction, animated: true)
                 self.view.setNeedsDisplay()
             }
+            
+        } else if (error != nil) {
+            NSLog("Received NiFi background queue operation callback. Operation encountered error: %@",
+                  error!.localizedDescription)
+        } else {
+            NSLog("Received NiFi background queue operation callback. Status or Error unknown (null).")
         }
     }
+    
 }
 
 

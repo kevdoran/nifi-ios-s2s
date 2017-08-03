@@ -253,7 +253,7 @@ static const int QUEUED_S2S_CONFIG_DEFAULT_BATCH_SIZE = 1024L * 1024L; // 1 MB
             NSUInteger averageSize = [_database averageSizeQueuedDataPacketsOrError:&dbError];
             if (!dbError) {
                 status.isFull =
-                    status.queuedPacketSizeBytes >= [self.config.maxQueuedPacketCount integerValue] - averageSize ?
+                    status.queuedPacketSizeBytes >= [self.config.maxQueuedPacketSize integerValue] - averageSize ?
                     YES : NO;
             } else {
                 if (error) {
