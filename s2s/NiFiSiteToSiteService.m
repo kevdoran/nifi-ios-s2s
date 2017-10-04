@@ -138,12 +138,20 @@ static const int QUEUED_S2S_CONFIG_DEFAULT_BATCH_SIZE = 1024L * 1024L; // 1 MB
     
     NSMutableArray *entitiesToInsert = [[NSMutableArray alloc] initWithCapacity:[dataPackets count]];
     for (NiFiDataPacket *packet in dataPackets) {
+        NSError *entityConversionError = nil;
         NiFiQueuedDataPacketEntity *queuedPacketEntity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet
-                                                                                        packetPrioritizer:_config.dataPacketPrioritizer];
+                                                                                        packetPrioritizer:_config.dataPacketPrioritizer
+                                                                                                    error:&entityConversionError];
+        if (entityConversionError) {
+            NSLog(@"Error enqueing data packet to local buffer database. %@", entityConversionError.localizedDescription);
+            if (*error) {
+                *error = entityConversionError;
+            }
+            return;
+        }
         [entitiesToInsert addObject:queuedPacketEntity];
     }
     [_database insertQueuedDataPackets:entitiesToInsert error:error];
-    
 }
 
 - (void) processOrError:(NSError *_Nullable *_Nullable)error {
@@ -329,8 +337,10 @@ static const int QUEUED_S2S_CONFIG_DEFAULT_BATCH_SIZE = 1024L * 1024L; // 1 MB
         NiFiQueuedSiteToSiteClient *s2sClient = [NiFiQueuedSiteToSiteClient clientWithConfig:config];
         [s2sClient enqueueDataPackets:packets error:&error];
         if (!error) {
-            [s2sClient cleanupOrError:nil];
-            status = [s2sClient queueStatusOrError:&error];
+            [s2sClient cleanupOrError:&error];
+            if (!error) {
+                status = [s2sClient queueStatusOrError:&error];
+            }
         }
         completionHandler(status, error);
     });
@@ -343,10 +353,12 @@ static const int QUEUED_S2S_CONFIG_DEFAULT_BATCH_SIZE = 1024L * 1024L; // 1 MB
         NiFiSiteToSiteQueueStatus *status = nil;
         NSError *error = nil;
         NiFiQueuedSiteToSiteClient *s2sClient = [NiFiQueuedSiteToSiteClient clientWithConfig:config];
-        [s2sClient cleanupOrError:nil];
-        [s2sClient processOrError:&error];
+        [s2sClient cleanupOrError:&error];
         if (!error) {
-            status = [s2sClient queueStatusOrError:&error];
+            [s2sClient processOrError:&error];
+            if (!error) {
+                status = [s2sClient queueStatusOrError:&error];
+            }
         }
         completionHandler(status, error);
     });

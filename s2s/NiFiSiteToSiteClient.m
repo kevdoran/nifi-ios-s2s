@@ -307,8 +307,15 @@
     for (NiFiPeer *peer in _currentPeerList) {
         NiFiHttpRestApiClient *apiClient = [self createRestApiClientWithBaseUrl:peer.url
                                                                      urlSession:(NSObject<NSURLSessionProtocol> *)urlSession];
-        NSArray *newPeers = [apiClient getPeersOrError:nil];
-        if (newPeers) {
+        NSError *getPeersError = nil;
+        NSArray *newPeers = [apiClient getPeersOrError:&getPeersError];
+        if (getPeersError || !newPeers) {
+            NSString *logMsg = @"Failed to update peers for remote NiFi cluster.";
+            if (getPeersError) {
+                logMsg = [NSString stringWithFormat:@"%@ %@", logMsg, getPeersError.localizedDescription];
+            }
+            NSLog(@"%@", logMsg);
+        } else {
             [self addPeers:newPeers];
             NSLog(@"Successfully updated peers for remote NiFi cluster.");
             self.isPeerUpdateNecessary = NO;
@@ -318,6 +325,7 @@
             }
             return;
         }
+        
     }
     NSLog(@"Error: Failed to update peers for remote NiFi cluster.");
 }
@@ -579,11 +587,16 @@ typedef void(^TtlExtenderBlock)(NSString * transactionId);
         dispatch_time_t nextKeepAlive = dispatch_time(DISPATCH_TIME_NOW, (ttl / 2) * NSEC_PER_SEC);
         dispatch_after(nextKeepAlive, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(void){
             if (self &&
-                [self shouldKeepAlive] &&
-                [self restApiClient] &&
-                [self transactionResource] &&
-                [self transactionResource].transactionUrl) {
-                [_restApiClient extendTTLForTransaction:_transactionResource.transactionUrl error:nil];
+                    [self shouldKeepAlive] &&
+                    [self restApiClient] &&
+                    [self transactionResource] &&
+                    [self transactionResource].transactionUrl) {
+                NSError *error;
+                [_restApiClient extendTTLForTransaction:_transactionResource.transactionUrl error:&error];
+                if (error) {
+                    NSLog(@"Error extended transaction with id=%@: %@",
+                          _transactionResource.transactionId, error.localizedDescription);
+                }
                 [self scheduleNextKeepAliveWithTTL:ttl]; // this will put the next "keep-alive heartbeat" task on an async queue
             }
         });
