@@ -29,7 +29,8 @@ static const NSUInteger DATABASE_BATCH_SIZE = 2000L;
 @implementation NiFiQueuedDataPacketEntity
 
 + (instancetype)entityWithDataPacket:(nonnull NiFiDataPacket *)dataPacket
-                   packetPrioritizer:(nullable NSObject <NiFiDataPacketPrioritizer> *)prioritizer {
+                   packetPrioritizer:(nullable NSObject <NiFiDataPacketPrioritizer> *)prioritizer
+                               error:(NSError *_Nullable *_Nullable)error {
     
     if (!dataPacket) {
         return nil;
@@ -41,7 +42,17 @@ static const NSUInteger DATABASE_BATCH_SIZE = 2000L;
     
     NiFiQueuedDataPacketEntity *entity = [[self alloc] init];
     entity.packetId = nil; // will be set on insert
-    entity.attributes = [NSJSONSerialization dataWithJSONObject:dataPacket.attributes options:0 error:nil];
+    
+    NSError *serializationError = nil;
+    NSData *serializedAttributes = [NSJSONSerialization dataWithJSONObject:dataPacket.attributes options:0 error:&serializationError];
+    if (!serializationError && serializedAttributes) {
+        entity.attributes = serializedAttributes;
+    } else {
+        if (error && serializationError) {
+            NSLog(@"Error serializing data packet attributes. %@", serializationError.localizedDescription);
+            *error = serializationError;
+        }
+    }
     if (!dataPacket.data) {
         entity.content = nil;
         entity.estimatedSize = [NSNumber numberWithUnsignedLong:entity.attributes.length];

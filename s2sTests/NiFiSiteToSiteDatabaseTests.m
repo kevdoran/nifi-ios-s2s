@@ -49,7 +49,7 @@
                                                                  data:[@"Test Data" dataUsingEncoding:NSUTF8StringEncoding]];
     
     NSObject <NiFiDataPacketPrioritizer> *prioritizer = [[NiFiNoOpDataPacketPrioritizer alloc] init];
-    NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer];
+    NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer error:nil];
     
     XCTAssertNotNil(entity);
     XCTAssertNil(entity.packetId);
@@ -77,7 +77,7 @@
     NSObject <NiFiDataPacketPrioritizer> *prioritizer = [NiFiNoOpDataPacketPrioritizer prioritizer];
     NiFiDataPacket *packet = [NiFiDataPacket dataPacketWithAttributes:@{ @"key1": @"value1"}
                                                                  data:[@"Test Data" dataUsingEncoding:NSUTF8StringEncoding]];
-    NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer];
+    NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer error:nil];
     
     [_db insertQueuedDataPacket:entity error:nil];
     
@@ -92,8 +92,8 @@
     NiFiDataPacket *packet2 = [NiFiDataPacket dataPacketWithAttributes:@{ @"key": @"value2"}
                                                                   data:[@"Test Data 2" dataUsingEncoding:NSUTF8StringEncoding]];
     
-    NiFiQueuedDataPacketEntity *entity1 = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet1 packetPrioritizer:prioritizer];
-    NiFiQueuedDataPacketEntity *entity2 = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet2 packetPrioritizer:prioritizer];
+    NiFiQueuedDataPacketEntity *entity1 = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet1 packetPrioritizer:prioritizer error:nil];
+    NiFiQueuedDataPacketEntity *entity2 = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet2 packetPrioritizer:prioritizer error:nil];
     
     NSArray *entities = [NSArray arrayWithObjects:entity1, entity2, nil];
     
@@ -106,7 +106,7 @@
     NSObject <NiFiDataPacketPrioritizer> *prioritizer = [NiFiNoOpDataPacketPrioritizer prioritizerWithFixedTTL:0.6];
     NiFiDataPacket *packet = [NiFiDataPacket dataPacketWithAttributes:@{ @"key1": @"value1"}
                                                                  data:[@"Test Data" dataUsingEncoding:NSUTF8StringEncoding]];
-    NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer];
+    NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer error:nil];
     NSLog(@"Entity with expires=%ld", (long)[entity.expiresAtMillisSinceReferenceDate integerValue]);
     [_db insertQueuedDataPacket:entity error:nil];
     [_db ageOffExpiredQueuedDataPacketsOrError:nil]; // should have no affect when called immediately
@@ -124,8 +124,8 @@
     NiFiDataPacket *packet2 = [NiFiDataPacket dataPacketWithAttributes:@{ @"key": @"value2"}
                                                                   data:[@"Test Data 2" dataUsingEncoding:NSUTF8StringEncoding]];
     
-    NiFiQueuedDataPacketEntity *entity1 = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet1 packetPrioritizer:prioritizer];
-    NiFiQueuedDataPacketEntity *entity2 = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet2 packetPrioritizer:prioritizer];
+    NiFiQueuedDataPacketEntity *entity1 = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet1 packetPrioritizer:prioritizer error:nil];
+    NiFiQueuedDataPacketEntity *entity2 = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet2 packetPrioritizer:prioritizer error:nil];
     
     NSArray *entities = [NSArray arrayWithObjects:entity1, entity2, nil];
     
@@ -147,8 +147,8 @@
     NiFiDataPacket *packet2 = [NiFiDataPacket dataPacketWithAttributes:@{ @"key": @"value2"}
                                                                   data:[@"Test Data 2" dataUsingEncoding:NSUTF8StringEncoding]];
     
-    NiFiQueuedDataPacketEntity *entity1 = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet1 packetPrioritizer:prioritizer];
-    NiFiQueuedDataPacketEntity *entity2 = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet2 packetPrioritizer:prioritizer];
+    NiFiQueuedDataPacketEntity *entity1 = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet1 packetPrioritizer:prioritizer error:nil];
+    NiFiQueuedDataPacketEntity *entity2 = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet2 packetPrioritizer:prioritizer error:nil];
     
     NSArray *entities = [NSArray arrayWithObjects:entity1, entity2, nil];
     
@@ -168,7 +168,7 @@
     for (int i = 1; i <= 10; i++) {
         NiFiDataPacket *packet = [NiFiDataPacket dataPacketWithAttributes:@{ @"key": @"value"}
                                                                      data:[@"Test Data" dataUsingEncoding:NSUTF8StringEncoding]];
-        NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer];
+        NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer error:nil];
         
         [_db insertQueuedDataPacket:entity error:nil];
     }
@@ -221,7 +221,7 @@
     for (int i = 1; i <= 10; i++) {
         NiFiDataPacket *packet = [NiFiDataPacket dataPacketWithAttributes:@{ @"key": @"value"}
                                                                      data:[@"Test Data" dataUsingEncoding:NSUTF8StringEncoding]];
-        NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer];
+        NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer error:nil];
         entitySize = [entity.estimatedSize integerValue]; // all the same size
         
         [_db insertQueuedDataPacket:entity error:nil];
@@ -276,7 +276,7 @@
     for (int i = 1; i <= largePacketCount; i++) {
         NiFiDataPacket *packet = [NiFiDataPacket dataPacketWithAttributes:@{ @"key": @"value"}
                                                                      data:[@"Test Data" dataUsingEncoding:NSUTF8StringEncoding]];
-        NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer];
+        NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer error:nil];
         
         [_db insertQueuedDataPacket:entity error:nil];
     }
@@ -300,7 +300,7 @@
     for (int i = 1; i <= 10; i++) {
         NiFiDataPacket *packet = [NiFiDataPacket dataPacketWithAttributes:@{ @"key": @"value"}
                                                                      data:[@"Test Data" dataUsingEncoding:NSUTF8StringEncoding]];
-        NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer];
+        NiFiQueuedDataPacketEntity *entity = [NiFiQueuedDataPacketEntity entityWithDataPacket:packet packetPrioritizer:prioritizer error:nil];
         [db1 insertQueuedDataPacket:entity error:nil];
         [db2 insertQueuedDataPacket:entity error:nil];
     }

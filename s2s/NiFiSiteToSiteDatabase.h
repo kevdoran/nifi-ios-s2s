@@ -40,7 +40,8 @@
 @property (nonatomic, nullable) NSString *transactionId;
 
 + (nullable instancetype)entityWithDataPacket:(nonnull NiFiDataPacket *)dataPacket
-                            packetPrioritizer:(nullable NSObject <NiFiDataPacketPrioritizer> *)prioritizer;
+                            packetPrioritizer:(nullable NSObject <NiFiDataPacketPrioritizer> *)prioritizer
+                                        error:(NSError *_Nullable *_Nullable)error;
 
 - (nullable NiFiDataPacket *)dataPacket;
 
